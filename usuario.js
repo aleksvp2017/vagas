@@ -31,6 +31,7 @@ const login = async function (req, res, next) {
         var jwt = require('jsonwebtoken')
         console.log('Usuario:', usuario.nome)
         console.log('Senha:', usuario.senha)
+        console.log('Secret:',process.env.SECRET)
         let token = jwt.sign({
             name: usuario.nome,
             email: usuario.email
