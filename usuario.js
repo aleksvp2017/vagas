@@ -29,6 +29,8 @@ const login = async function (req, res, next) {
     var usuario = await validar(req.body.usuario.email, req.body.usuario.senha)
     if (usuario != null) {
         var jwt = require('jsonwebtoken')
+        console.log('Usuario:', usuario.nome)
+        console.log('Senha:', usuario.senha)
         let token = jwt.sign({
             name: usuario.nome,
             email: usuario.email
