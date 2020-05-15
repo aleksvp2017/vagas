@@ -70,7 +70,7 @@ const estrutura = {
         nome: 'TIPO',
         validar(valor){
           if (valor != 'Repactuação' && valor != 'Novas') {
-              return 'Coluna ' + this.nome + ' deve ter valor R ou N'
+              return 'Coluna ' + this.nome + ' deve ter valor Repactuação ou Novas'
           }
         }
       },
