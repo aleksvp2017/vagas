@@ -95,6 +95,7 @@ const importarPlanilha = async function (req, res) {
   try{
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
     const sqlInsert = montarInsert(cabecalho)
+    console.log(sqlInsert)
     const client = await pool.connect()
     for (const linha of linhas){
       await client.query(sqlInsert, linha)
@@ -121,11 +122,41 @@ async function carregarLinhasPlanilha(req) {
   if (matrizDados.length <= 1){
     throw 'Sem linhas de dados na planilha'
   }
-  var cabecalho = matrizDados[0]
+
+  
+  let {cabecalho, colunasAExcluir} = removerColunasAdicionais(matrizDados[0])
+  console.log(colunasAExcluir)
   validarCabecalho(cabecalho)
   var linhas = matrizDados.splice(1,matrizDados.length)
+  linhas = removerColunasAdicionaisDasLinhas(linhas, colunasAExcluir)
+  console.log(linhas)
   validarLinhas(cabecalho, linhas)
 return {linhas, cabecalho}
+}
+
+function removerColunasAdicionaisDasLinhas(linhas, colunasAExcluir){
+  var linhasFiltradas = []
+  linhas.map( (linha) => {
+    linha = linha.filter((celula, index) => {
+      return colunasAExcluir.indexOf(index) === -1 
+    })
+    linhasFiltradas.push(linha)
+  })
+  return linhasFiltradas
+}
+
+function removerColunasAdicionais(cabecalho){
+  var colunasAExcluir = []
+  cabecalho = cabecalho.filter((item, index) => {
+    if (Planilha.estrutura.colunasAtualizaveis.indexOf(item) > -1){
+      return true
+    }
+    else{
+      colunasAExcluir.push(index)
+      return false
+    }
+  })
+  return {cabecalho, colunasAExcluir}
 }
 
 async function transformStreamInWorkbook(stream){
@@ -153,7 +184,7 @@ const montarValues = (tamanho) => {
 
 const validarCabecalho = (cabecalho) => {
   Planilha.estrutura.colunasObrigatorias.map((coluna) => {
-    if (!cabecalho.find(elemento => elemento === coluna)){
+    if (!cabecalho.find(elemento => elemento.toUpperCase() === coluna)){
       throw 'Coluna ' + coluna + ' não encontrada.'
     }
   })
@@ -162,7 +193,7 @@ const validarCabecalho = (cabecalho) => {
 const validarLinhas = (cabecalho, linhas) => {
   linhas.map((linha) => {
     linha.map((celula, posicao) => {
-      var coluna = Planilha.estrutura.colunas[cabecalho[posicao]]
+      var coluna = Planilha.estrutura.colunas[cabecalho[posicao].toUpperCase()]
       if (coluna){
         let msgValidacao = coluna.validar(celula)
         if (msgValidacao){
