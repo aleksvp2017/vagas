@@ -33,7 +33,7 @@ const login = async function (req, res, next) {
             name: usuario.nome,
             email: usuario.email
         }, process.env.SECRET, {
-            expiresIn: 6000
+            expiresIn: 86400
         })
         res.status(200).json({ auth: true, usuario: { ...usuario, senha: '', token: token } })
         next()
