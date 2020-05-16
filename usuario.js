@@ -108,7 +108,7 @@ const recuperarSenha = async function (req, res, next) {
             res.status(401).json({ error: `Error ao gravar dados ${erroAoGravar}` })
         }
         else {
-            Mensagem.enviarEmail('Redefinição de senha', `Sua nova senha é ${senhaGerada}`, req.body.email).then((mensagem) => {
+            Mensagem.enviarEmail('Redefinição de senha', `Sua nova senha no Vagas é ${senhaGerada}`, req.body.email).then((mensagem) => {
                 res.status(200).json({ message: 'Nova senha enviada com sucesso' })
                 next()
             }).catch(error => {
