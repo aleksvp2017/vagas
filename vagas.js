@@ -95,7 +95,6 @@ const importarPlanilha = async function (req, res) {
   try{
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
     const sqlInsert = montarInsert(cabecalho)
-    console.log(sqlInsert)
     const client = await pool.connect()
     for (const linha of linhas){
       await client.query(sqlInsert, linha)
@@ -125,11 +124,9 @@ async function carregarLinhasPlanilha(req) {
 
   
   let {cabecalho, colunasAExcluir} = removerColunasAdicionais(matrizDados[0])
-  console.log(colunasAExcluir)
   validarCabecalho(cabecalho)
   var linhas = matrizDados.splice(1,matrizDados.length)
   linhas = removerColunasAdicionaisDasLinhas(linhas, colunasAExcluir)
-  console.log(linhas)
   validarLinhas(cabecalho, linhas)
 return {linhas, cabecalho}
 }
@@ -148,7 +145,9 @@ function removerColunasAdicionaisDasLinhas(linhas, colunasAExcluir){
 function removerColunasAdicionais(cabecalho){
   var colunasAExcluir = []
   cabecalho = cabecalho.filter((item, index) => {
-    if (Planilha.estrutura.colunasAtualizaveis.indexOf(item) > -1){
+    if (Planilha.estrutura.colunasAtualizaveis.find(colunaAtualizavel => 
+        colunaAtualizavel.toUpperCase() === item.toUpperCase()))
+      {
       return true
     }
     else{
@@ -156,6 +155,7 @@ function removerColunasAdicionais(cabecalho){
       return false
     }
   })
+  //console.log(cabecalho, colunasAExcluir)
   return {cabecalho, colunasAExcluir}
 }
 
