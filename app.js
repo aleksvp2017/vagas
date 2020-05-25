@@ -38,7 +38,7 @@ app.post('/vagas/:id', Vagas.alterar)
 
 //WELCOME
 app.get('/bemvindo', (request, response, next) => {
-    response.status(200).json({ mensagem: "Seja bem vindo ao Vagas-BE!" })
+    response.status(200).json({ mensagem: "Seja bem vindo ao Vagas local" })
 } )
 
 
