@@ -80,7 +80,7 @@ const listar = async (req, res) => {
       }
       else {
           try{
-              let vagas = await (await pool.query('select * from vaga')).rows
+              let vagas = await (await pool.query('select * from vaga order by vagaid')).rows
               res.status(200).json({ vagas })
           }
           catch(error){
