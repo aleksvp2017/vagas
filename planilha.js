@@ -2,7 +2,7 @@ const estrutura = {
     nome: 'Vagas',
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricularealizada',
-        'modalidade', 'tipo'],
+        'modalidade', 'acao'],
     colunas: {
       ANO: {
         nome: 'ANO',
@@ -66,8 +66,8 @@ const estrutura = {
             }
         }
       },
-      TIPO: {
-        nome: 'TIPO',
+      ACAO: {
+        nome: 'ACAO',
         validar(valor){
           if (valor != 'Repactuação' && valor != 'Novas') {
               return 'Coluna ' + this.nome + ' deve ter valor Repactuação ou Novas'
