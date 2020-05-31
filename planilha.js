@@ -2,7 +2,7 @@ const estrutura = {
     nome: 'Vagas',
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricularealizada',
-        'modalidade', 'acao', 'tiporede'],
+        'modalidade', 'acao', 'tiporede', 'ted'],
     colunas: {
       ANO: {
         nome: 'ANO',
