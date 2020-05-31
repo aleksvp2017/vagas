@@ -73,7 +73,7 @@ const estrutura = {
               return 'Coluna ' + this.nome + ' deve ter valor Repactuação ou Novas'
           }
         }
-      },
+      },    
     }
   }
 
