@@ -2,7 +2,7 @@ const estrutura = {
     nome: 'Vagas',
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricularealizada',
-        'modalidade', 'acao'],
+        'modalidade', 'acao', 'tiporede'],
     colunas: {
       ANO: {
         nome: 'ANO',
@@ -73,7 +73,16 @@ const estrutura = {
               return 'Coluna ' + this.nome + ' deve ter valor Repactuação ou Novas'
           }
         }
-      },    
+      },  
+      TIPOREDE: {
+        nome: 'TIPOREDE',
+        validar(valor){
+          if (valor != '' && valor != 'Federal' && valor != 'Estadual / Distrital' && valor != 'Municipal' 
+            && valor != 'Privada' && valor != 'Sistema S') {
+              return 'Coluna ' + this.nome + ' deve ter valor Federal, Estadual / Distrital, Municipal, Privada, Sistema S ou vazia'
+          }
+        }
+      },          
     }
   }
 
