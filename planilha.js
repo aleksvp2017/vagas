@@ -43,10 +43,12 @@ const estrutura = {
       HOMOLOGADA: {
         nome: 'HOMOLOGADA',
         validar(valor){
+          //if (valor != ''){
             valor = parseInt(valor)
             if (valor && !Number.isInteger(valor)){
                 return 'Coluna ' + this.nome + ' deve ser um número inteiro'
             }
+          //}
         }
       },
       MATRICULAREALIZADA: {

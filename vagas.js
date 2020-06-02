@@ -102,6 +102,7 @@ const importarPlanilha = async function (req, res) {
     res.status(200).json({ message: "Dados carregados com sucesso" })
   }
   catch (error){
+    console.log(error)
     res.status(401).json({ error })
   }
 }
@@ -117,7 +118,7 @@ async function carregarLinhasPlanilha(req) {
   if (planilha == null){
     throw 'Nome da página / aba da planilha deve ser ' + Planilha.estrutura.nome
   }
-  var matrizDados = XLSX.utils.sheet_to_json(planilha, { header: 1, raw: true })
+  var matrizDados = XLSX.utils.sheet_to_json(planilha, { header: 1, raw: true, defval:null })
   if (matrizDados.length <= 1){
     throw 'Sem linhas de dados na planilha'
   }
