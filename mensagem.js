@@ -1,5 +1,16 @@
 const chalk = require('chalk')
 
+
+const enviarWhatsApp = (mensagem, destinatario) => {
+    const client = require('twilio')();
+    client.messages.create({
+    from: 'whatsapp:+14155238886',
+    body: mensagem,
+    to: 'whatsapp:'+destinatario
+    }).then(message => console.log(message.sid)).catch(error => console.log(error))
+}
+
+
 const enviarEmail = (assunto, mensagem, destinatario) => {
     return new Promise((resolve,reject)=>{
         var nodemailer = require('nodemailer');
@@ -31,7 +42,6 @@ const enviarEmail = (assunto, mensagem, destinatario) => {
 }
 
 const enviar = async function (req, res, next) {
-    console.log(req)
     enviarEmail(req.body.assunto, req.body.mensagem, req.body.destinatario).then((message) => {
         res.status(200).json({ message })
     }).catch(error => {
@@ -41,5 +51,5 @@ const enviar = async function (req, res, next) {
 }
 
 module.exports = {
-    enviar, enviarEmail
+    enviar, enviarEmail, enviarWhatsApp
 }
