@@ -64,7 +64,6 @@ const buscar = async (filtro) => {
     catch(error){
         console.log(chalk.red('erro ao buscar usuarios', error))
     }
-    console.log(user)
     return user
 }
 
@@ -77,6 +76,7 @@ const registrar = async function(req, res, next) {
             await pool.query('insert into usuario (nome, email, senha) values ($1,$2,$3)', 
                 [usuario.nome, usuario.email, usuario.senha])
             res.status(200).json( {message: 'Usuário registrado com sucesso'})
+            Mensagem.enviarWhatsApp('Usuário a espera de aprovação:' + usuario.email, '+556181830001')
         }
         catch(error){
             res.status(401).json({error: `Error ao gravar dados ${error}`})
