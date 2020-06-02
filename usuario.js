@@ -28,6 +28,10 @@ const validar = async (email, password) => {
 const login = async function (req, res, next) {
     var usuario = await validar(req.body.usuario.email, req.body.usuario.senha)
     if (usuario != null) {
+        if (!usuario.snativo){
+            res.status(401).json({ error: 'Usuário não ativo, por gentileza, aguarde a ativação.' })
+            return
+        }
         var jwt = require('jsonwebtoken')
         let token = jwt.sign({
             name: usuario.nome,
