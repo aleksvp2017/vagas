@@ -1,11 +1,11 @@
 var Helper = require('./helper.js')
 var Mensagem = require('./mensagem.js')
 const chalk = require('chalk')
-
 const { Pool } = require('pg')
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
+const Permissao = require('./permissao')
 /*
 //export DATABASE_URL=postgres://quintoitinerario:quintoitinerario@localhost:5432/postgres
 */
@@ -39,7 +39,7 @@ const login = async function (req, res, next) {
         }, process.env.SECRET, {
             expiresIn: 86400
         })
-        res.status(200).json({ auth: true, usuario: { ...usuario, senha: '', token: token } })
+        res.status(200).json({ auth: true, usuario: { ...usuario, senha: '', token: token, menu: Permissao.menu(usuario.email) }})
         next()
     }
     else {
