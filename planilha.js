@@ -1,7 +1,7 @@
 const estrutura = {
     nome: 'Vagas',
     colunasObrigatorias: ['ANO'],
-    colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricularealizada',
+    colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula',
         'modalidade', 'acao', 'tiporede', 'ted', 'tipocurso'],
     colunas: {
       ANO: {
@@ -51,8 +51,8 @@ const estrutura = {
           //}
         }
       },
-      MATRICULAREALIZADA: {
-        nome: 'MATRICULAREALIZADA',
+      MATRICULA: {
+        nome: 'MATRICULA',
         validar(valor){
             valor = parseInt(valor)
             if (valor && !Number.isInteger(valor)){
