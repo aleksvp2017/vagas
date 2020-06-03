@@ -2,7 +2,7 @@ const estrutura = {
     nome: 'Vagas',
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricularealizada',
-        'modalidade', 'acao', 'tiporede', 'ted'],
+        'modalidade', 'acao', 'tiporede', 'ted', 'tipocurso'],
     colunas: {
       ANO: {
         nome: 'ANO',
@@ -63,8 +63,8 @@ const estrutura = {
       MODALIDADE: {
         nome: 'MODALIDADE',
         validar(valor){
-            if (valor != 'Técnico Presencial' && valor != 'Técnico EaD' && valor != 'FIC Presencial' && valor != 'FIC EaD') {
-                return 'Coluna ' + this.nome + ' deve ter um dos seguintes valores: Técnico Presencial, Técnico EaD, FIC Presencial, FIC EaD'
+            if (valor != ''&& valor != 'EaD' && valor != 'Presencial') {
+                return 'Coluna ' + this.nome + ' deve ter um dos seguintes valores: EaD ou Presencial'
             }
         }
       },
@@ -84,7 +84,15 @@ const estrutura = {
               return 'Coluna ' + this.nome + ' deve ter valor Federal, Estadual / Distrital, Municipal, Privada, Sistema S ou vazia'
           }
         }
-      },          
+      },     
+      TIPOCURSO: {
+        nome: 'TIPOCURSO',
+        validar(valor){
+          if (valor != '' && valor != 'Técnico' && valor != 'FIC' ) {
+              return 'Coluna ' + this.nome + ' deve ter valor Técnico ou FIC'
+          }
+        }
+      },            
     }
   }
 
