@@ -71,8 +71,8 @@ const estrutura = {
       ACAO: {
         nome: 'ACAO',
         validar(valor){
-          if (valor != 'Repactuação' && valor != 'Novas') {
-              return 'Coluna ' + this.nome + ' deve ter valor Repactuação ou Novas'
+          if (valor != 'Repactuação' && valor != 'Fomentos novos') {
+              return 'Coluna ' + this.nome + ' deve ter valor Repactuação ou Fomentos novos'
           }
         }
       },  
