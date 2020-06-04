@@ -2,7 +2,7 @@ const estrutura = {
     nome: 'Vagas',
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula',
-        'modalidade', 'acao', 'tiporede', 'ted', 'tipocurso', 'parceiro'],
+        'modalidade', 'acao', 'tiporede', 'ted', 'pronatec','tipocurso', 'parceiro'],
     colunas: {
       ANO: {
         nome: 'ANO',
@@ -92,7 +92,15 @@ const estrutura = {
               return 'Coluna ' + this.nome + ' deve ter valor Técnico ou FIC'
           }
         }
-      },            
+      },  
+      PRONATEC: {
+        nome: 'PRONATEC',
+        validar(valor){
+          if (valor != '' && valor != 'Prisional' && valor != 'Mediotec' && valor != 'TD') {
+              return 'Coluna ' + this.nome + ' deve ter valor Prisional, Mediotec ou TD'
+          }
+        }
+      },                 
     }
   }
 
