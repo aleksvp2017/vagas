@@ -1,5 +1,5 @@
 var Helper = require('./helper.js')
-var mensagem = require('./mensagem.js')
+var Mensagem = require('./mensagem.js')
 const chalk = require('chalk')
 const { Pool } = require('pg')
 const pool = new Pool({
@@ -105,7 +105,7 @@ const registrar = async function(req, res, next) {
             var usuario = req.body.usuario
             await inserir({...usuario, snativo: false})
             res.status(200).json( {mensagem: 'Usuário registrado com sucesso'})
-            mensagem.enviarEmail('Usuário a espera de aprovação:' + usuario.email, 'Usuário a espera de aprovação:' + usuario.email, 
+            Mensagem.enviarEmail('Usuário a espera de aprovação:' + usuario.email, 'Usuário a espera de aprovação:' + usuario.email, 
                 process.env.EMAIL_FALECONSCO)
         }
         catch(error){
@@ -124,10 +124,10 @@ const incluir = async function(req, res, next) {
             usuario = req.body.usuario
             var {senhaHash, senha} = gerarSenha()
             usuario.senha = senhaHash
-            usuario = await inserir({...usuario, snativo: false})
+            usuario = await inserir({...usuario, snativo: true})
             var mensagem = 'Usuário cadastrado com sucesso.'
             if (usuario.snativo){
-                mensagem.enviarEmail('Cadastro no sistema Vagas',
+                Mensagem.enviarEmail('Cadastro no sistema Vagas',
                     'Você foi cadastrado no sistema <a href=\'https://vagas-ui.herokuapp.com/\'>Vagas</a>. '+ "<br/>" +
                     'Caso não queria manter esse cadastro, responda esse e-mail com a palavra cancelar ou exclua sua conta pelo próprio sistema no menu de Dados Pessoais. '+ "<br/>"+
                     'Seu usuário é ' + usuario.email + ' e sua senha ' + senha + "<br/>", usuario.email)
@@ -178,7 +178,7 @@ const recuperarSenha = async function (req, res, next) {
             res.status(401).json({ error: `Error ao gravar dados ${erroAoGravar}` })
         }
         else {
-            mensagem.enviarEmail('Redefinição de senha', `Sua nova senha no Vagas é ${senhaGerada}`, req.body.email).then((mensagem) => {
+            Mensagem.enviarEmail('Redefinição de senha', `Sua nova senha no Vagas é ${senhaGerada}`, req.body.email).then((mensagem) => {
                 res.status(200).json({ mensagem: 'Nova senha enviada com sucesso' })
                 next()
             }).catch(error => {
@@ -198,8 +198,8 @@ const alterar = async function (req, res, next) {
         else {
             try{
                 let usuario = req.body.usuario
-                await pool.query('update usuario set nome = $1, email = $2 where usuarioid = $3', 
-                    [usuario.nome, usuario.email, usuario.usuarioid])
+                await pool.query('update usuario set nome = $1, email = $2, snativo = $3 where usuarioid = $4', 
+                    [usuario.nome, usuario.email, usuario.snativo, usuario.usuarioid])
                 res.status(200).json( {mensagem: 'Dados alterados com sucesso'})
             }
             catch(error){
