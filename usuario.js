@@ -1,27 +1,25 @@
 var Helper = require('./helper.js')
-var Mensagem = require('./mensagem.js')
+var mensagem = require('./mensagem.js')
 const chalk = require('chalk')
 const { Pool } = require('pg')
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 const Permissao = require('./permissao')
-/*
-//export DATABASE_URL=postgres://quintoitinerario:quintoitinerario@localhost:5432/postgres
-*/
 
-const validar = async (email, password) => {
-    var validUser = null
+const validar = async (email, senha) => {
+    var usuarioValido = null
     try{
-        let result = await pool.query('select * from usuario where email=$1 and senha=$2', [email, password])
-        if (result){
-            validUser = result.rows[0]
+        let usuarios = await buscar({email:email, senha: senha})
+        if (usuarios){
+            usuarioValido = usuarios[0]
         }
+        return usuarioValido
     }
     catch(error){
-        console.log(chalk.red('erro ao buscar usuarios', error))
+        console.log(chalk.red('Problema ao validar usuário: ', error))
+        throw 'Problema ao validar usuário: ' + error
     }
-    return validUser
 }
 
 
@@ -37,7 +35,7 @@ const login = async function (req, res, next) {
             name: usuario.nome,
             email: usuario.email
         }, process.env.SECRET, {
-            expiresIn: 86400
+            expiresIn: 86400 //24h
         })
         res.status(200).json({ auth: true, usuario: { ...usuario, senha: '', token: token, menu: Permissao.menu(usuario.email) }})
         next()
@@ -55,9 +53,8 @@ const listar = async function (req, res, next) {
         }
         else {
             try{     
-                var users = await (await pool.query('select * from usuario')).rows
-                console.log(users)
-                res.status(200).json( {usuarios: users})
+                var usuarios = await buscar()
+                res.status(200).json( {usuarios: usuarios})
             }
             catch(error){
                 res.status(401).json({error: `Error ao listar usuários ${error}`})
@@ -67,51 +64,82 @@ const listar = async function (req, res, next) {
 }
 
 const buscar = async (filtro) => {
-    var user = null
+    var usuarios = null
     try{
-        var result = null
-        if (filtro.email){
-            result = await pool.query('select * from usuario where email=$1', [filtro.email])
+        var sql = 'select * from usuario where true = true '
+        if (filtro){
+            if (filtro.email){
+                sql += ' and email = \'' + filtro.email + '\''
+            }
+            if (filtro.id){
+                sql += ' and usuarioid = ' + filtro.usuarioid
+            }
+            if (filtro.senha){
+                sql += ' and senha = \'' + filtro.senha + '\''
+            }
         }
-        else if (filtro.id){
-            result = await pool.query('select * from usuario where id=$1', [filtro.id])
-        }
-        if (result){
-            user = result.rows[0]
-        }
+        var usuarios = await (await pool.query(sql)).rows
+        return usuarios
     }
     catch(error){
-        console.log(chalk.red('erro ao buscar usuarios', error))
+        console.log(chalk.red('Problema ao buscar usuarios: ', error))
+        throw 'Problema ao buscar usuarios: ' + error
     }
-    return user
+}
+
+const inserir = async(usuario) => {
+    try{
+        let result = await pool.query('insert into usuario (nome, email, senha, snativo) values ($1,$2,$3, $4) returning *', 
+                [usuario.nome, usuario.email, usuario.senha, usuario.snativo])
+        return result.rows[0]      
+    }
+    catch (error){
+        console.log(chalk.red('Problema ao inserir usuario: ', error))
+        throw 'Problema ao inserir usuario: ' + error        
+    }
+}
+const registrar = async function(req, res, next) {
+    var usuarios = await buscar({email:req.body.usuario.email})
+    if (!usuarios || usuarios.length === 0){
+        try{
+            var usuario = req.body.usuario
+            await inserir({...usuario, snativo: false})
+            res.status(200).json( {mensagem: 'Usuário registrado com sucesso'})
+            mensagem.enviarEmail('Usuário a espera de aprovação:' + usuario.email, 'Usuário a espera de aprovação:' + usuario.email, 
+                process.env.EMAIL_FALECONSCO)
+        }
+        catch(error){
+            res.status(401).json({error: `Problema ao gravar dados ${error}`})
+        }
+    }
+    else{
+        res.status(401).json({error: 'E-mail já registrado'})
+    }
 }
 
 const incluir = async function(req, res, next) {
-    //verifica se ja existe email na base
-    var usuario = await buscar({email:req.body.usuario.email})
-    if (usuario == null){
+    var usuarios = await buscar({email:req.body.usuario.email})
+    if (!usuarios || usuarios.length === 0){
         try{
             usuario = req.body.usuario
-            let senhaGerada = Math.random().toString(36).slice(-8)
-            usuario.senha = Helper.encripta(senhaGerada)        
-            let result = await pool.query('insert into usuario (nome, email, senha, snativo) values ($1,$2,$3, $4) returning *', 
-                [usuario.nome, usuario.email, usuario.senha, usuario.snativo])
-            usuario = result.rows[0]                
-            var message = 'Usuário cadastrado com sucesso.'
+            var {senhaHash, senha} = gerarSenha()
+            usuario.senha = senhaHash
+            usuario = await inserir({...usuario, snativo: false})
+            var mensagem = 'Usuário cadastrado com sucesso.'
             if (usuario.snativo){
-                Mensagem.enviarEmail('Cadastro no sistema Vagas',
+                mensagem.enviarEmail('Cadastro no sistema Vagas',
                     'Você foi cadastrado no sistema <a href=\'https://vagas-ui.herokuapp.com/\'>Vagas</a>. '+ "<br/>" +
                     'Caso não queria manter esse cadastro, responda esse e-mail com a palavra cancelar ou exclua sua conta pelo próprio sistema no menu de Dados Pessoais. '+ "<br/>"+
-                    'Seu usuário é ' + usuario.email + ' e sua senha ' + senhaGerada + "<br/>", usuario.email)
-                    message += ' Foi enviado e-mail ao usuário com sua senha.'
+                    'Seu usuário é ' + usuario.email + ' e sua senha ' + senha + "<br/>", usuario.email)
+                    mensagem += ' Foi enviado e-mail ao usuário com sua senha.'
             }else{
-                message += ' Não foi enviado e-mail ao usuário pois ele encontra-se não ativo.'
+                mensagem += ' Não foi enviado e-mail ao usuário pois ele encontra-se não ativo.'
             }
             usuario.senha = ''
-            res.status(200).json( {message, usuario})
+            res.status(200).json( {mensagem, usuario})
         }
         catch(error){
-            res.status(401).json({error: `Error ao gravar dados ${error}`})
+            res.status(401).json({error: `Problema ao gravar dados ${error}`})
         }
     }
     else{
@@ -119,29 +147,14 @@ const incluir = async function(req, res, next) {
     }
 }
 
-const registrar = async function(req, res, next) {
-    //verifica se ja existe email na base
-    var usuario = await buscar({email:req.body.usuario.email})
-    if (usuario == null){
-        try{
-            usuario = req.body.usuario
-            await pool.query('insert into usuario (nome, email, senha) values ($1,$2,$3)', 
-                [usuario.nome, usuario.email, usuario.senha])
-            res.status(200).json( {message: 'Usuário registrado com sucesso'})
-            Mensagem.enviarWhatsApp('Usuário a espera de aprovação:' + usuario.email, '+556181830001')
-        }
-        catch(error){
-            res.status(401).json({error: `Error ao gravar dados ${error}`})
-        }
-    }
-    else{
-        res.status(401).json({error: 'E-mail já registrado'})
-    }
+function gerarSenha(){
+    let senhaGerada = Math.random().toString(36).slice(-8)
+    return {senhaHash: Helper.encripta(senhaGerada), senha: senhaGerada}
 }
 
 async function regerarSenhaUsuario(usuario) {
-    let senhaGerada = Math.random().toString(36).slice(-8)
-    usuario.senha = Helper.encripta(senhaGerada)
+    var {senhaHash, senha} = gerarSenha()
+    usuario.senha = senhaHash
     let erroAoGravar = false
     try{
         await pool.query('update usuario set senha = $1 where usuarioid = $2', 
@@ -150,22 +163,23 @@ async function regerarSenhaUsuario(usuario) {
     catch(error){
         erroAoGravar = true
     }
-    return { erroAoGravar, senhaGerada }
+    return { erroAoGravar, senhaGerada: senha }
 }
 
 const recuperarSenha = async function (req, res, next) {
-    var usuario = await buscar({ email: req.body.email })
-    if (usuario == null) {
+    var usuarios = await buscar({email:req.body.email})
+    if (!usuarios || usuarios.length === 0){
         res.status(401).json({ error: 'Email não cadastrado' })
     }
     else {
+        var usuario = usuarios[0]
         let { erroAoGravar, senhaGerada } = await regerarSenhaUsuario(usuario)
         if (erroAoGravar) {
             res.status(401).json({ error: `Error ao gravar dados ${erroAoGravar}` })
         }
         else {
-            Mensagem.enviarEmail('Redefinição de senha', `Sua nova senha no Vagas é ${senhaGerada}`, req.body.email).then((mensagem) => {
-                res.status(200).json({ message: 'Nova senha enviada com sucesso' })
+            mensagem.enviarEmail('Redefinição de senha', `Sua nova senha no Vagas é ${senhaGerada}`, req.body.email).then((mensagem) => {
+                res.status(200).json({ mensagem: 'Nova senha enviada com sucesso' })
                 next()
             }).catch(error => {
                 console.log(chalk.red(error))
@@ -186,10 +200,10 @@ const alterar = async function (req, res, next) {
                 let usuario = req.body.usuario
                 await pool.query('update usuario set nome = $1, email = $2 where usuarioid = $3', 
                     [usuario.nome, usuario.email, usuario.usuarioid])
-                res.status(200).json( {message: 'Dados alterados com sucesso'})
+                res.status(200).json( {mensagem: 'Dados alterados com sucesso'})
             }
             catch(error){
-                res.status(401).json({error: `Error ao gravar dados ${error}`})
+                res.status(401).json({error: `Problema ao gravar dados ${error}`})
             }
         }
     })
@@ -205,10 +219,10 @@ const excluir = async function (req, res) {
             try{
                 let ids = req.body.usuarios.map(usuario => usuario.usuarioid)
                 await pool.query('delete from usuario where usuarioid in (' + ids.join(',') + ')')
-                res.status(200).json( {message: 'Usuário(s) excluído(s) com sucesso'})
+                res.status(200).json( {mensagem: 'Usuário(s) excluído(s) com sucesso'})
             }
             catch(error){
-                res.status(401).json({error: `Error ao gravar dados ${error}`})
+                res.status(401).json({error: `Problema ao gravar dados ${error}`})
             }
         }
     })
@@ -230,7 +244,7 @@ const alterarSenha = async function (req, res, next) {
                     let usuario = req.body.usuario
                     await pool.query('update usuario set senha = $1 where usuarioid = $2', 
                         [req.body.senhaNova, usuario.usuarioid])
-                    res.status(200).json( {message: 'Senha alterada com sucesso'})
+                    res.status(200).json( {mensagem: 'Senha alterada com sucesso'})
                 }
                 catch(error){
                     res.status(401).json({error: `Error ao alterar senha ${error}`})
@@ -241,5 +255,5 @@ const alterarSenha = async function (req, res, next) {
 }
 
 module.exports = {
-    login, registrar, buscar, recuperarSenha, alterar, excluir, alterarSenha, listar, incluir
+    login, registrar, recuperarSenha, alterar, excluir, alterarSenha, listar, incluir
 }
