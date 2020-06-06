@@ -47,6 +47,25 @@ const login = async function (req, res, next) {
     }
 }
 
+const listar = async function (req, res, next) {
+    var jwt = require('jsonwebtoken')
+    jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
+        if (err) {
+            Helper.enviaErroAdequado(err, res)
+        }
+        else {
+            try{     
+                var users = await (await pool.query('select * from usuario')).rows
+                console.log(users)
+                res.status(200).json( {usuarios: users})
+            }
+            catch(error){
+                res.status(401).json({error: `Error ao listar usuários ${error}`})
+            }
+        }
+    })
+}
+
 const buscar = async (filtro) => {
     var user = null
     try{
@@ -151,8 +170,10 @@ const excluir = async function (req, res) {
         }
         else {
             try{
-                await pool.query('delete from usuario where usuarioid = $1', [req.params.id])
-                res.status(200).json( {message: 'Usuário excluído com sucesso'})
+                console.log(req.body.usuarios)
+                let ids = req.body.usuarios.map(usuario => usuario.usuarioid)
+                await pool.query('delete from usuario where usuarioid in (' + ids.join(',') + ')')
+                res.status(200).json( {message: 'Usuário(s) excluído(s) com sucesso'})
             }
             catch(error){
                 res.status(401).json({error: `Error ao gravar dados ${error}`})
@@ -188,5 +209,5 @@ const alterarSenha = async function (req, res, next) {
 }
 
 module.exports = {
-    login, registrar, buscar, recuperarSenha, alterar, excluir, alterarSenha
+    login, registrar, buscar, recuperarSenha, alterar, excluir, alterarSenha, listar
 }

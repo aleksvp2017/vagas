@@ -22,8 +22,9 @@ app.post('/login', Usuario.login)
 app.post('/usuarios', Usuario.registrar)
 app.post('/recuperarSenha', Usuario.recuperarSenha)
 app.post('/usuarios/:id', Usuario.alterar)
-app.delete('/usuarios/:id', Usuario.excluir)
+app.delete('/usuarios', Usuario.excluir)
 app.post('/alterarSenha', Usuario.alterarSenha)
+app.get('/usuarios', Usuario.listar)
 
 
 //Para ler arquivo enviado no posto
