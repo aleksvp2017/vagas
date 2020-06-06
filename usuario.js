@@ -86,6 +86,39 @@ const buscar = async (filtro) => {
     return user
 }
 
+const incluir = async function(req, res, next) {
+    //verifica se ja existe email na base
+    var usuario = await buscar({email:req.body.usuario.email})
+    if (usuario == null){
+        try{
+            usuario = req.body.usuario
+            let senhaGerada = Math.random().toString(36).slice(-8)
+            usuario.senha = Helper.encripta(senhaGerada)        
+            let result = await pool.query('insert into usuario (nome, email, senha, snativo) values ($1,$2,$3, $4) returning *', 
+                [usuario.nome, usuario.email, usuario.senha, usuario.snativo])
+            usuario = result.rows[0]                
+            var message = 'Usuário cadastrado com sucesso.'
+            if (usuario.snativo){
+                Mensagem.enviarEmail('Cadastro no sistema Vagas',
+                    'Você foi cadastrado no sistema <a href=\'https://vagas-ui.herokuapp.com/\'>Vagas</a>. '+ "<br/>" +
+                    'Caso não queria manter esse cadastro, responda esse e-mail com a palavra cancelar ou exclua sua conta pelo próprio sistema no menu de Dados Pessoais. '+ "<br/>"+
+                    'Seu usuário é ' + usuario.email + ' e sua senha ' + senhaGerada + "<br/>", usuario.email)
+                    message += ' Foi enviado e-mail ao usuário com sua senha.'
+            }else{
+                message += ' Não foi enviado e-mail ao usuário pois ele encontra-se não ativo.'
+            }
+            usuario.senha = ''
+            res.status(200).json( {message, usuario})
+        }
+        catch(error){
+            res.status(401).json({error: `Error ao gravar dados ${error}`})
+        }
+    }
+    else{
+        res.status(401).json({error: 'E-mail já registrado'})
+    }
+}
+
 const registrar = async function(req, res, next) {
     //verifica se ja existe email na base
     var usuario = await buscar({email:req.body.usuario.email})
@@ -170,7 +203,6 @@ const excluir = async function (req, res) {
         }
         else {
             try{
-                console.log(req.body.usuarios)
                 let ids = req.body.usuarios.map(usuario => usuario.usuarioid)
                 await pool.query('delete from usuario where usuarioid in (' + ids.join(',') + ')')
                 res.status(200).json( {message: 'Usuário(s) excluído(s) com sucesso'})
@@ -209,5 +241,5 @@ const alterarSenha = async function (req, res, next) {
 }
 
 module.exports = {
-    login, registrar, buscar, recuperarSenha, alterar, excluir, alterarSenha, listar
+    login, registrar, buscar, recuperarSenha, alterar, excluir, alterarSenha, listar, incluir
 }
