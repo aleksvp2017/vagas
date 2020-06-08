@@ -1,8 +1,15 @@
+const { Pool } = require('pg')
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+})
+const Municipio = require('./municipio.js')
+
+
 const estrutura = {
     nome: 'Vagas',
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula',
-        'modalidade', 'acao', 'tiporede', 'ted', 'pronatec','tipocurso', 'parceiro'],
+        'modalidade', 'acao', 'tiporede', 'ted', 'pronatec','tipocurso', 'parceiro', 'municipio'],
     colunas: {
       ANO: {
         nome: 'ANO',
@@ -100,7 +107,19 @@ const estrutura = {
               return 'Coluna ' + this.nome + ' deve ter valor Prisional, Mediotec ou TD'
           }
         }
-      },                 
+      },        
+      MUNICIPIO: {
+        nome: 'MUNICIPIO',
+        colunaDependente: 'UF',
+        async validar(nome, uf){
+          if (nome) {
+              var municipio = await Municipio.obter(nome, uf)
+              if (!municipio){
+                return 'Município ' + nome + ' não encontrado na UF ' + uf 
+              }
+          }
+        }
+      },         
     }
   }
 
