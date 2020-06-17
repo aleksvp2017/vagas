@@ -9,7 +9,8 @@ const estrutura = {
     nome: 'Vagas',
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula',
-        'modalidade', 'acao', 'tiporede', 'ted', 'pronatec','tipocurso', 'parceiro', 'municipio'],
+        'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'pronatec','tipocurso', 'parceiro', 'municipio',
+        'turma'],
     colunas: {
       ANO: {
         nome: 'ANO',
@@ -68,7 +69,7 @@ const estrutura = {
         }
       },
       MODALIDADE: {
-        nome: 'MODALIDADE',
+        nome: 'MODALIDADEEDUCACIONAL',
         validar(valor){
             if (valor != ''&& valor != 'EaD' && valor != 'Presencial') {
                 return 'Coluna ' + this.nome + ' deve ter um dos seguintes valores: EaD ou Presencial'
