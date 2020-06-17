@@ -123,6 +123,7 @@ const estrutura = {
       },         
     }
   }
+  
 
   module.exports = {
       estrutura
