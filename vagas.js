@@ -99,7 +99,8 @@ const listar = async (req, res) => {
 const importarPlanilha = async function (req, res) {
   try{
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
-    verificarLinhasIdenticas(linhas, cabecalho)
+    verificarLinhasIdenticasNaPlanilha(linhas, cabecalho)
+    await apagarLinhasIdenticas(linhas, cabecalho)
     const sqlInsert = montarInsert(cabecalho)
     const client = await pool.connect()
     for (const linha of linhas){
@@ -108,22 +109,49 @@ const importarPlanilha = async function (req, res) {
     res.status(200).json({ message: "Dados carregados com sucesso" })
   }
   catch (error){
-    console.log('Pegou erro aqui:', error)
     res.status(401).json({ error })
   }
 }
 
-function verificarLinhasIdenticas(linhas, cabecalho){
+//Apaga linhas iguais já persistidas 
+async function apagarLinhasIdenticas(linhas, cabecalho){
+  var clausulasExclusao = ""
+  for (linha of linhas){
+    var clausulaExclusao = ""
+    Planilha.estrutura.colunasIdentificamUnicamente.map(coluna => {
+      let posicao = cabecalho.indexOf(coluna.toUpperCase())
+      if (posicao !== -1){
+        clausulaExclusao += '\''+ linha[cabecalho.indexOf(coluna.toUpperCase())] + '\','
+      }
+    })
+    clausulasExclusao += "(" + clausulaExclusao.slice(0, clausulaExclusao.length - 1) + "),"
+  }
+  var sqlDelete = montarDelete(cabecalho) + "(" + clausulasExclusao.slice(0, clausulasExclusao.length-1) + ")"
+  const client = await pool.connect()
+  await client.query(sqlDelete)
+}
+
+//Monta delete de acordo com as colunas que identificam unicamente uma vaga que estejam presentes no cabecalho
+const montarDelete = (cabecalho) => {
+  var colunas = []
+  Planilha.estrutura.colunasIdentificamUnicamente.map(coluna => {
+    if (cabecalho.indexOf(coluna.toUpperCase()) !== -1){
+      colunas.push(coluna)
+    }
+  })
+  return "delete from vaga where (" + colunas.join(',').toLowerCase() + ") in "
+}
+
+//Verifica linhas identicas na propria planilha
+function verificarLinhasIdenticasNaPlanilha(linhas, cabecalho){
   var linhasIdenticas = []
   var indiceLinha = 0
   for (linha of linhas){
-    var indiceOutraLinha = 0
     var outrasLinhas = linhas.slice(indiceLinha+1)
     for (outraLinha of outrasLinhas){
       if (vagasIguais(linha, outraLinha, cabecalho)){
           linhasIdenticas.push(linha)
       }
-      indiceOutraLinha ++
     }
     indiceLinha ++
   }
@@ -132,6 +160,7 @@ function verificarLinhasIdenticas(linhas, cabecalho){
   }
 }
 
+//Compara duas vagas pelos campos que identificam uma vaga
 function vagasIguais(vagaA, vagaB, cabecalho){
   var snIguais = true
   Planilha.estrutura.colunasIdentificamUnicamente.map( coluna => {
@@ -213,7 +242,6 @@ function removerColunasNaoPrevistasNaPlanilha(cabecalho){
       return false
     }
   })
-  //console.log(cabecalho, colunasAExcluir)
   return {cabecalho, colunasAExcluir}
 }
 
