@@ -99,6 +99,7 @@ const listar = async (req, res) => {
 const importarPlanilha = async function (req, res) {
   try{
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
+    verificarLinhasIdenticas(linhas, cabecalho)
     const sqlInsert = montarInsert(cabecalho)
     const client = await pool.connect()
     for (const linha of linhas){
@@ -112,6 +113,36 @@ const importarPlanilha = async function (req, res) {
   }
 }
 
+function verificarLinhasIdenticas(linhas, cabecalho){
+  var linhasIdenticas = []
+  var indiceLinha = 0
+  for (linha of linhas){
+    var indiceOutraLinha = 0
+    var outrasLinhas = linhas.slice(indiceLinha+1)
+    for (outraLinha of outrasLinhas){
+      if (vagasIguais(linha, outraLinha, cabecalho)){
+          linhasIdenticas.push(linha)
+      }
+      indiceOutraLinha ++
+    }
+    indiceLinha ++
+  }
+  if (linhasIdenticas.length > 0){
+    throw "Linhas idênticas encontradas na planilha: " + linhasIdenticas
+  }
+}
+
+function vagasIguais(vagaA, vagaB, cabecalho){
+  var snIguais = true
+  Planilha.estrutura.colunasIdentificamUnicamente.map( coluna => {
+    var indexColuna = cabecalho.indexOf(coluna.toUpperCase())
+    if (vagaA[indexColuna] !== vagaB[indexColuna]){
+      snIguais = false
+    }
+  })
+
+  return snIguais
+}
 
 
 async function carregarLinhasPlanilha(req) {  

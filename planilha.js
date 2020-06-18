@@ -4,13 +4,15 @@ const pool = new Pool({
 })
 const Municipio = require('./municipio.js')
 
-
 const estrutura = {
     nome: 'Vagas',
+    colunasIdentificamUnicamente: ['uf', 'ano', 'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'pronatec', 
+      'tipocurso', 'parceiro', 'municipio', 'turma'],
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula',
         'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'pronatec','tipocurso', 'parceiro', 'municipio',
         'turma'],
+    colunasMetricas: ['saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula'],
     colunas: {
       ANO: {
         nome: 'ANO',
@@ -123,7 +125,7 @@ const estrutura = {
       },         
     }
   }
-  
+
 
   module.exports = {
       estrutura
