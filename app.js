@@ -17,7 +17,7 @@ const dotenv = require('dotenv')
 dotenv.config()
 
 //USUÁRIOS
-var Usuario = require('./usuario.js')
+var Usuario = require('./app/services/usuario.js')
 app.post('/login', Usuario.login)
 app.post('/usuarios', Usuario.registrar)
 app.post('/usuarios/incluir', Usuario.incluir)
@@ -31,7 +31,7 @@ app.get('/usuarios', Usuario.listar)
 //Para ler arquivo enviado no posto
 const multer = require("multer")
 //VAGAS
-var Vagas = require('./vagas.js')
+var Vagas = require('./app/services/vagas.js')
 //o nome tem que bater com o do parâmetro enviado no formdata
 app.post('/vagas/importar', multer().array("fileuploaded"), Vagas.importarPlanilha)
 app.get('/vagas', Vagas.listar)
@@ -45,7 +45,7 @@ app.get('/bemvindo', (request, response, next) => {
 
 
 //MENSAGENS
-var Mensagem = require('./mensagem.js')
+var Mensagem = require('./app/services/mensagem.js')
 app.post('/mensagem', Mensagem.enviar)
 
 const chalk = require('chalk');

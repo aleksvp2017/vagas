@@ -7,11 +7,13 @@ const pool = new Pool({
 })
 const Planilha = require('./planilha.js')
 var Helper = require('./helper.js')
+var Auditoria = require('./auditoria.js')
 
 
 const alterar =  async (req, res) => {
   var jwt = require('jsonwebtoken')
   jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
+      console.log(decoded)
       if (err){
           Helper.enviaErroAdequado(err, res)
       }
@@ -21,10 +23,12 @@ const alterar =  async (req, res) => {
               await validar(vaga)
               let result = await pool.query(montarUpdate(req.body.vaga))
               vaga = result.rows[0]
+              Auditoria.log(decoded.email, 'vagas.alterar', req.body.vaga, null)
               res.status(200).json( {message: 'Dados alterados com sucesso', vaga})    
           }
           catch (error){
               console.log(chalk.red('Erro ao alterar vagas, error'))
+              Auditoria.log(decoded.email, 'vagas.alterar', new Date(), req.body.vaga, error)
               res.status(401).json({error: `Error ao gravar dados: ${error}`})
           }
       }
