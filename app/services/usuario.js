@@ -6,6 +6,7 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 const Permissao = require('./permissao')
+var Auditoria = require('./auditoria.js')
 
 const validar = async (email, senha) => {
     var usuarioValido = null
@@ -38,10 +39,13 @@ const login = async function (req, res, next) {
             expiresIn: 86400 //24h
         })
         res.status(200).json({ auth: true, usuario: { ...usuario, senha: '', token: token, menu: Permissao.menu(usuario.email) }})
+        Auditoria.log(usuario.email, 'usuario.login', usuario.email, null)
         next()
     }
     else {
-        res.status(401).json({ error: 'E-mail ou senha incorretos' })
+        let msgErro = 'E-mail ou senha incorretos'
+        res.status(401).json({ error: msgErro })
+        Auditoria.log(usuario.email, 'usuario.login', usuario.email, msgErro)
     }
 }
 
@@ -90,7 +94,7 @@ const buscar = async (filtro) => {
 const inserir = async(usuario) => {
     try{
         let result = await pool.query('insert into usuario (nome, email, senha, snativo) values ($1,$2,$3, $4) returning *', 
-                [usuario.nome, usuario.email, usuario.senha, usuario.snativo])
+                [usuario.nome, usuario.email, usuario.senha, usuario.snativo])                
         return result.rows[0]      
     }
     catch (error){
@@ -107,9 +111,11 @@ const registrar = async function(req, res, next) {
             res.status(200).json( {mensagem: 'Usuário registrado com sucesso'})
             Mensagem.enviarEmail('Usuário a espera de aprovação:' + usuario.email, 'Usuário a espera de aprovação:' + usuario.email, 
                 process.env.EMAIL_FALECONSCO)
+            Auditoria.log(req.body.usuario.email, 'usuario.registrar', req.body.usuario.email, null)
         }
         catch(error){
             res.status(401).json({error: `Problema ao gravar dados ${error}`})
+            Auditoria.log(req.body.usuario.email, 'usuario.registrar', req.body.usuario.email, error)
         }
     }
     else{
@@ -137,9 +143,11 @@ const incluir = async function(req, res, next) {
             }
             usuario.senha = ''
             res.status(200).json( {mensagem, usuario})
+            Auditoria.log(req.body.usuario.email, 'usuario.incluir', req.body.usuario.email, null)            
         }
         catch(error){
             res.status(401).json({error: `Problema ao gravar dados ${error}`})
+            Auditoria.log(req.body.usuario.email, 'usuario.incluir', req.body.usuario.email, error)            
         }
     }
     else{
@@ -180,10 +188,12 @@ const recuperarSenha = async function (req, res, next) {
         else {
             Mensagem.enviarEmail('Redefinição de senha', `Sua nova senha no Vagas é ${senhaGerada}`, req.body.email).then((mensagem) => {
                 res.status(200).json({ mensagem: 'Nova senha enviada com sucesso' })
+                Auditoria.log(req.body.email, 'usuario.recuperarsenha', req.body.email, null)
                 next()
             }).catch(error => {
                 console.log(chalk.red(error))
                 res.status(401).json({ error: `Error ao enviar mensagem ${error}` })
+                Auditoria.log(req.body.email, 'usuario.recuperarsenha', req.body.email, error)
             })
         }
     }
@@ -201,9 +211,11 @@ const alterar = async function (req, res, next) {
                 await pool.query('update usuario set nome = $1, email = $2, snativo = $3 where usuarioid = $4', 
                     [usuario.nome, usuario.email, usuario.snativo, usuario.usuarioid])
                 res.status(200).json( {mensagem: 'Dados alterados com sucesso'})
+                Auditoria.log(decoded.email, 'usuario.alterar', req.body.usuario, null)
             }
             catch(error){
                 res.status(401).json({error: `Problema ao gravar dados ${error}`})
+                Auditoria.log(decoded.email, 'usuario.alterar', req.body.usuario, error)
             }
         }
     })
@@ -220,9 +232,11 @@ const excluir = async function (req, res) {
                 let ids = req.body.usuarios.map(usuario => usuario.usuarioid)
                 await pool.query('delete from usuario where usuarioid in (' + ids.join(',') + ')')
                 res.status(200).json( {mensagem: 'Usuário(s) excluído(s) com sucesso'})
+                Auditoria.log(decoded.email, 'usuario.excluir', req.body.usuarios, null)
             }
             catch(error){
                 res.status(401).json({error: `Problema ao gravar dados ${error}`})
+                Auditoria.log(decoded.email, 'usuario.excluir', req.body.usuarios, error)
             }
         }
     })
@@ -245,9 +259,11 @@ const alterarSenha = async function (req, res, next) {
                     await pool.query('update usuario set senha = $1 where usuarioid = $2', 
                         [req.body.senhaNova, usuario.usuarioid])
                     res.status(200).json( {mensagem: 'Senha alterada com sucesso'})
+                    Auditoria.log(decoded.email, 'usuario.alterarSenha', req.body.usuario.email, null)
                 }
                 catch(error){
                     res.status(401).json({error: `Error ao alterar senha ${error}`})
+                    Auditoria.log(decoded.email, 'usuario.alterarSenha', req.body.usuario.email, error)
                 }
             }
         }
