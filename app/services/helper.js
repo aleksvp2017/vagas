@@ -46,8 +46,14 @@ function trocaCaracteresAcentuados(texto){
 }
 
 function isIguais(texto1, texto2){
-    const parsedTexto1 = texto1.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
-    const parsedTexto2 = texto2.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+    var parsedTexto1 = ''
+    if (texto1){
+        parsedTexto1 = texto1.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+    }
+    var parsedTexto2 = ''
+    if (texto2){
+        parsedTexto2 = texto2.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+    }
     // console.log(chalk.green(parsedTexto1, ' é igual a ', parsedTexto2))
     return parsedTexto1 === parsedTexto2
 }  

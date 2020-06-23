@@ -135,9 +135,9 @@ async function apagarLinhasIdenticas(linhas, cabecalho){
   for (linha of linhas){
     var clausulaExclusao = ""
     Planilha.estrutura.colunasIdentificamUnicamente.map(coluna => {
-      let posicao = cabecalho.indexOf(coluna.toUpperCase())
+      let posicao = Helper.obterPosicao(cabecalho, coluna)
       if (posicao !== -1){
-        clausulaExclusao += '\''+ linha[cabecalho.indexOf(coluna.toUpperCase())] + '\','
+        clausulaExclusao += '\''+ linha[posicao] + '\','
       }
     })
     clausulasExclusao += "(" + clausulaExclusao.slice(0, clausulaExclusao.length - 1) + "),"
@@ -151,7 +151,7 @@ async function apagarLinhasIdenticas(linhas, cabecalho){
 const montarDelete = (cabecalho) => {
   var colunas = []
   Planilha.estrutura.colunasIdentificamUnicamente.map(coluna => {
-    if (cabecalho.indexOf(coluna.toUpperCase()) !== -1){
+    if (Helper.obterPosicao(cabecalho, coluna) !== -1){
       colunas.push(coluna)
     }
   })
@@ -294,7 +294,9 @@ const validarLinhas = async (cabecalho, linhas) => {
       if (coluna){
         var msgValidacao = ''
         if (coluna.colunaDependente){
-          msgValidacao = await coluna.validar(celula, linha[cabecalho.indexOf(coluna.colunaDependente)])
+          msgValidacao = await coluna.validar(celula, 
+            linha[Helper.obterPosicao(cabecalho, coluna.colunaDependente)])
+            //linha[cabecalho.indexOf(coluna.colunaDependente)])
         } else {
           msgValidacao = coluna.validar(celula)
         }
