@@ -50,3 +50,5 @@ app.post('/mensagem', Mensagem.enviar)
 
 const chalk = require('chalk');
 app.listen(process.env.PORT, () => { console.log(chalk.underline.blue('Server up and listening at ' + process.env.PORT))})
+
+console.log(process.env.DATABASE_URL)

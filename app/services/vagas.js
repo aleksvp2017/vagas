@@ -121,8 +121,9 @@ const importarPlanilha = async function (req, res) {
           Auditoria.log(decoded.email, 'vagas.importarplanilha', {cabecalho: cabecalho, linhas: linhas}, null)          
         }
         catch (error){
+          console.log(chalk.red(`Erro ao importarPlanilha ${error}`))
           res.status(401).json({ error })
-          Auditoria.log(decoded.email, 'vagas.importarplanilha', {cabecalho: cabecalho, linhas: linhas}, error)          
+          Auditoria.log(decoded.email, 'vagas.importarplanilha', '', error)          
         }
       }
     })
@@ -179,7 +180,7 @@ function verificarLinhasIdenticasNaPlanilha(linhas, cabecalho){
 function vagasIguais(vagaA, vagaB, cabecalho){
   var snIguais = true
   Planilha.estrutura.colunasIdentificamUnicamente.map( coluna => {
-    var indexColuna = cabecalho.indexOf(coluna.toUpperCase())
+    var indexColuna = Helper.obterPosicao(cabecalho, coluna)
     if (vagaA[indexColuna] !== vagaB[indexColuna]){
       snIguais = false
     }
@@ -248,7 +249,7 @@ function removerColunasNaoPrevistasNaPlanilha(cabecalho){
   var colunasAExcluir = []
   cabecalho = cabecalho.filter((item, index) => {
     if (Planilha.estrutura.colunasAtualizaveis.find(colunaAtualizavel => 
-        colunaAtualizavel.toUpperCase() === item.toUpperCase()))
+        Helper.isIguais(colunaAtualizavel, item)))
       {
       return true
     }
@@ -263,7 +264,8 @@ function removerColunasNaoPrevistasNaPlanilha(cabecalho){
 
 
 const montarInsert = (colunas) => {
-  return "insert into vaga (" + colunas.join(',').toLowerCase() + ") values(" + montarValues(colunas.length) + ")"; 
+  var colunasSemAcento = colunas.map(coluna => Helper.trocaCaracteresAcentuados(coluna))
+  return "insert into vaga (" + colunasSemAcento.join(',').toLowerCase() + ") values(" + montarValues(colunas.length) + ")"; 
 }
 
 const montarValues = (tamanho) => {
@@ -276,7 +278,7 @@ const montarValues = (tamanho) => {
 
 const validarColunasObrigatorias = (cabecalho) => {
   Planilha.estrutura.colunasObrigatorias.map((coluna) => {
-    if (!cabecalho.find(elemento => elemento.toUpperCase() === coluna)){
+    if (!cabecalho.find(elemento => Helper.isIguais(elemento, coluna))){
       throw 'Coluna ' + coluna + ' não encontrada.'
     }
   })
@@ -287,7 +289,8 @@ const validarLinhas = async (cabecalho, linhas) => {
     var posicao = -1
     for (let celula of linha){
       posicao = posicao + 1
-      var coluna = Planilha.estrutura.colunas[cabecalho[posicao].toUpperCase()]
+      var coluna = Planilha.estrutura.obterColuna(cabecalho[posicao])
+        //Planilha.estrutura.colunas[cabecalho[posicao].toUpperCase()]
       if (coluna){
         var msgValidacao = ''
         if (coluna.colunaDependente){

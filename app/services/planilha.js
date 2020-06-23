@@ -1,8 +1,5 @@
-const { Pool } = require('pg')
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-})
 const Municipio = require('./municipio.js')
+const Helper = require('./helper.js')
 
 const estrutura = {
     nome: 'Vagas',
@@ -13,6 +10,15 @@ const estrutura = {
         'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'pronatec','tipocurso', 'parceiro', 'municipio',
         'turma'],
     colunasMetricas: ['saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula'],
+    obterColuna(nome){
+      var colunaEncontrada = null
+      Object.entries(this.colunas).map(coluna => {
+        if (Helper.isIguais(coluna[1].nome, nome)){
+          colunaEncontrada = coluna[1]
+        }
+      })
+      return colunaEncontrada
+    },
     colunas: {
       ANO: {
         nome: 'ANO',

@@ -1,3 +1,5 @@
+const chalk = require('chalk');
+
 function gerarId(itens){
     var id = 0;
     itens.map((item)=> {
@@ -39,7 +41,32 @@ function encripta(senha) {
     return senhaHash
 }
 
+function trocaCaracteresAcentuados(texto){
+    return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function isIguais(texto1, texto2){
+    const parsedTexto1 = texto1.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+    const parsedTexto2 = texto2.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+    // console.log(chalk.green(parsedTexto1, ' é igual a ', parsedTexto2))
+    return parsedTexto1 === parsedTexto2
+}  
+
+//obtem posicao do texto no vetor, desconsiderando maiusculas/minusculas e acentos
+function obterPosicao(vetorDeTextos, texto){
+    var posicaoDoTexto = -1
+    vetorDeTextos.map((item, indice) => {
+        if (isIguais(item, texto)){
+            posicaoDoTexto = indice
+        }
+    })
+    return posicaoDoTexto
+}
+
 module.exports = {
     gerarId, carregaDadosBanco, gravaDadosBanco, 
-    sleep, enviaErroAdequado, encripta
+    sleep, enviaErroAdequado, encripta, isIguais, obterPosicao,
+    trocaCaracteresAcentuados
   };
+
+  
