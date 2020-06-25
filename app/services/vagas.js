@@ -54,9 +54,9 @@ async function validar(vaga) {
 const montarUpdate = (vagas) => {
   var update = ''
   Planilha.estrutura.colunasAtualizaveis.map(coluna =>{
-    if (vagas[coluna]){
+    //if (vagas[coluna]){
       update += ',' + coluna + ' = \'' + vagas[coluna] + '\''
-    }
+    //}
   })
   return 'update vaga set ' + update.substring(1, update.length) + ' where vagaid = ' + vagas['vagaid'] + ' returning *'
 }
