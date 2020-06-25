@@ -3,11 +3,11 @@ const Helper = require('./helper.js')
 
 const estrutura = {
     nome: 'Vagas',
-    colunasIdentificamUnicamente: ['uf', 'ano', 'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'pronatec', 
+    colunasIdentificamUnicamente: ['uf', 'ano', 'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'tipodeconta', 
       'tipocurso', 'parceiro', 'municipio', 'turma'],
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula',
-        'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'pronatec','tipocurso', 'parceiro', 'municipio',
+        'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'tipodeconta','tipocurso', 'parceiro', 'municipio',
         'turma'],
     colunasMetricas: ['saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula'],
     obterColuna(nome){
@@ -109,8 +109,8 @@ const estrutura = {
           }
         }
       },  
-      PRONATEC: {
-        nome: 'PRONATEC',
+      TIPODECONTA: {
+        nome: 'TIPODECONTA',
         validar(valor){
           if (valor != '' && valor != 'Prisional' && valor != 'Mediotec' && valor != 'TD') {
               return 'Coluna ' + this.nome + ' deve ter valor Prisional, Mediotec ou TD'
