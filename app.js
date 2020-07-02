@@ -27,6 +27,9 @@ app.delete('/usuarios', Usuario.excluir)
 app.post('/alterarSenha', Usuario.alterarSenha)
 app.get('/usuarios', Usuario.listar)
 
+//AUDITORIA
+var Auditoria = require('./app/services/auditoria.js')
+app.get('/auditoria', Auditoria.listar)
 
 //Para ler arquivo enviado no posto
 const multer = require("multer")
