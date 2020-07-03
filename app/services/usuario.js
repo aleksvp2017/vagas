@@ -211,11 +211,11 @@ const alterar = async function (req, res, next) {
                 await pool.query('update usuario set nome = $1, email = $2, snativo = $3 where usuarioid = $4', 
                     [usuario.nome, usuario.email, usuario.snativo, usuario.usuarioid])
                 res.status(200).json( {mensagem: 'Dados alterados com sucesso'})
-                Auditoria.log(decoded.email, 'usuario.alterar', req.body.usuario, null)
+                Auditoria.log(decoded.email, 'usuario.alterar', {...req.body.usuario, senha:''}, null)
             }
             catch(error){
                 res.status(401).json({error: `Problema ao gravar dados ${error}`})
-                Auditoria.log(decoded.email, 'usuario.alterar', req.body.usuario, error)
+                Auditoria.log(decoded.email, 'usuario.alterar', {...req.body.usuario, senha:''}, error)
             }
         }
     })
@@ -232,11 +232,14 @@ const excluir = async function (req, res) {
                 let ids = req.body.usuarios.map(usuario => usuario.usuarioid)
                 await pool.query('delete from usuario where usuarioid in (' + ids.join(',') + ')')
                 res.status(200).json( {mensagem: 'Usuário(s) excluído(s) com sucesso'})
-                Auditoria.log(decoded.email, 'usuario.excluir', req.body.usuarios, null)
+                Auditoria.log(decoded.email, 'usuario.excluir', 
+                    req.body.usuarios.map(usuario => ({...usuario, senha: ''})), null)
             }
             catch(error){
                 res.status(401).json({error: `Problema ao gravar dados ${error}`})
-                Auditoria.log(decoded.email, 'usuario.excluir', req.body.usuarios, error)
+                Auditoria.log(decoded.email, 'usuario.excluir', 
+                    req.body.usuarios.map(usuario => ({...usuario, senha: ''})), 
+                    error)
             }
         }
     })
