@@ -20,13 +20,15 @@ const alterar =  async (req, res) => {
           try{
               let vaga = req.body.vaga
               await validar(vaga)
-              let result = await pool.query(montarUpdate(req.body.vaga))
+              var sqlUpdate = montarUpdate(req.body.vaga)
+              console.log(sqlUpdate)
+              let result = await pool.query(sqlUpdate)
               vaga = result.rows[0]
               res.status(200).json( {message: 'Dados alterados com sucesso', vaga})    
               Auditoria.log(decoded.email, 'vagas.alterar', req.body.vaga, null)              
           }
           catch (error){
-              console.log(chalk.red('Erro ao alterar vagas, error'))
+              console.log(chalk.red('Erro ao alterar vagas', error))
               res.status(401).json({error: `Error ao gravar dados: ${error}`})
               Auditoria.log(decoded.email, 'vagas.alterar', new Date(), req.body.vaga, error)              
           }
@@ -54,10 +56,13 @@ async function validar(vaga) {
 const montarUpdate = (vagas) => {
   var update = ''
   Planilha.estrutura.colunasAtualizaveis.map(coluna =>{
-      let valor = (vagas[coluna] !== null ? vagas[coluna] : '')
-    //if (vagas[coluna]){
-      update += ',' + coluna + ' = \'' + valor + '\''
-    //}
+      let valor = (vagas[coluna] !== null ? vagas[coluna] : null)
+      if (valor == null){
+        update += `,  ${coluna}  = ${valor}`
+      }
+      else {
+        update += ',' + coluna + ' = \'' + valor + '\''
+      }
   })
   return 'update vaga set ' + update.substring(1, update.length) + ' where vagaid = ' + vagas['vagaid'] + ' returning *'
 }

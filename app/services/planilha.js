@@ -3,12 +3,12 @@ const Helper = require('./helper.js')
 
 const estrutura = {
     nome: 'Vagas',
-    colunasIdentificamUnicamente: ['uf', 'ano', 'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'tipodeconta', 
+    colunasIdentificamUnicamente: ['uf', 'ano', 'mes','modalidadeeducacional', 'acao', 'tiporede', 'ted', 'tipodeconta', 
       'tipocurso', 'parceiro', 'municipio', 'turma'],
     colunasObrigatorias: ['ANO'],
     colunasAtualizaveis: ['uf','ano', 'saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula',
         'modalidadeeducacional', 'acao', 'tiporede', 'ted', 'tipodeconta','tipocurso', 'parceiro', 'municipio',
-        'turma'],
+        'turma', 'mes'],
     colunasMetricas: ['saldo', 'valoraprovado', 'aprovada', 'homologada', 'matricula'],
     obterColuna(nome){
       var colunaEncontrada = null
@@ -29,6 +29,18 @@ const estrutura = {
           }
         }
       },
+      MES: {
+        nome: 'MES',
+        validar(valor){
+          valor = parseInt(valor)
+          if (!Number.isInteger(valor)){
+              return 'Coluna ' + this.nome + ' deve ser um número inteiro'
+          }
+          if (valor < 1 || valor > 12){
+            return 'Coluna ' + this.nome + ' deve possuir valor entre 1 e 12'
+          }
+        }
+      },      
       SALDO: {
         nome: 'SALDO',
         validar(valor){
@@ -87,7 +99,7 @@ const estrutura = {
       ACAO: {
         nome: 'ACAO',
         validar(valor){
-          if (valor != 'Repactuação' && valor != 'Fomentos novos') {
+          if (valor && valor != 'Repactuação' && valor != 'Fomentos novos') {
               return 'Coluna ' + this.nome + ' deve ter valor Repactuação ou Fomentos novos'
           }
         }
@@ -112,7 +124,7 @@ const estrutura = {
       TIPODECONTA: {
         nome: 'TIPODECONTA',
         validar(valor){
-          if (valor != '' && valor != 'Prisional' && valor != 'Mediotec' && valor != 'TD') {
+          if (valor && valor != 'Prisional' && valor != 'Mediotec' && valor != 'TD') {
               return 'Coluna ' + this.nome + ' deve ter valor Prisional, Mediotec ou TD'
           }
         }
