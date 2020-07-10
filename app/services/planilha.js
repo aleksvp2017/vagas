@@ -116,7 +116,7 @@ const estrutura = {
       TIPOCURSO: {
         nome: 'TIPOCURSO',
         validar(valor){
-          if (valor != '' && valor != 'Técnico' && valor != 'FIC' ) {
+          if (valor && valor != 'Técnico' && valor != 'FIC' ) {
               return 'Coluna ' + this.nome + ' deve ter valor Técnico ou FIC'
           }
         }
