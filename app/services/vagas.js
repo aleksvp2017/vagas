@@ -11,29 +11,21 @@ var Auditoria = require('./auditoria.js')
 
 
 const alterar =  async (req, res) => {
-  var jwt = require('jsonwebtoken')
-  jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-      if (err){
-          Helper.enviaErroAdequado(err, res)
-      }
-      else{
-          try{
-              let vaga = req.body.vaga
-              await validar(vaga)
-              var sqlUpdate = montarUpdate(req.body.vaga)
-              console.log(sqlUpdate)
-              let result = await pool.query(sqlUpdate)
-              vaga = result.rows[0]
-              res.status(200).json( {message: 'Dados alterados com sucesso', vaga})    
-              Auditoria.log(decoded.email, 'vagas.alterar', req.body.vaga, null)              
-          }
-          catch (error){
-              console.log(chalk.red('Erro ao alterar vagas', error))
-              res.status(401).json({error: `Error ao gravar dados: ${error}`})
-              Auditoria.log(decoded.email, 'vagas.alterar', new Date(), req.body.vaga, error)              
-          }
-      }
-  })
+  try{
+      let vaga = req.body.vaga
+      await validar(vaga)
+      var sqlUpdate = montarUpdate(req.body.vaga)
+      console.log(sqlUpdate)
+      let result = await pool.query(sqlUpdate)
+      vaga = result.rows[0]
+      res.status(200).json( {message: 'Dados alterados com sucesso', vaga})    
+      Auditoria.log(req.app.usuario, 'vagas.alterar', req.body.vaga, null)              
+  }
+  catch (error){
+      console.log(chalk.red('Erro ao alterar vagas', error))
+      res.status(401).json({error: `Error ao gravar dados: ${error}`})
+      Auditoria.log(req.app.usuario, 'vagas.alterar', new Date(), req.body.vaga, error)              
+  }
 }
 
 async function validar(vaga) {
@@ -68,71 +60,47 @@ const montarUpdate = (vagas) => {
 }
 
 const excluir =  async (req, res) => {
-  var jwt = require('jsonwebtoken')
-  jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-      if (err){
-          Helper.enviaErroAdequado(err, res)
-      }
-      else{
-          try{
-              let ids = req.body.vagas.map(vaga => vaga.vagaid)
-              await pool.query('delete from vaga where vagaid in (' + ids.join(',') + ')')
-              res.status(200).json( {message: 'Vagas excluídas com sucesso'})    
-              Auditoria.log(decoded.email, 'vagas.excluir', req.body.vagas, null)              
-          }
-          catch (error){
-              res.status(401).json({error: `Error ao excluir vagas ${error}`})
-              Auditoria.log(decoded.email, 'vagas.excluir', req.body.vagas, error)              
-          } 
-      }
-  })
+  try{
+      let ids = req.body.vagas.map(vaga => vaga.vagaid)
+      await pool.query('delete from vaga where vagaid in (' + ids.join(',') + ')')
+      res.status(200).json( {message: 'Vagas excluídas com sucesso'})    
+      Auditoria.log(req.app.usuario, 'vagas.excluir', req.body.vagas, null)              
+  }
+  catch (error){
+      res.status(401).json({error: `Error ao excluir vagas ${error}`})
+      Auditoria.log(req.app.usuario, 'vagas.excluir', req.body.vagas, error)              
+  } 
 }
 
 const listar = async (req, res) => {
-  var jwt = require('jsonwebtoken')
-  jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-      if (err) {
-          Helper.enviaErroAdequado(err, res)
-      }
-      else {
-          try{
-              let vagas = await (await pool.query('select * from vaga order by vagaid')).rows
-              res.status(200).json({ vagas })
-          }
-          catch(error){
-              console.log(chalk.red('erro ao buscar vagas', error))
-          }              
-      }
-  })
+  try{
+      let vagas = await (await pool.query('select * from vaga order by vagaid')).rows
+      res.status(200).json({ vagas })
+  }
+  catch(error){
+      console.log(chalk.red('erro ao buscar vagas', error))
+  }              
 }
 
 
 const importarPlanilha = async function (req, res) {
-  var jwt = require('jsonwebtoken')
-  jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-      if (err) {
-          Helper.enviaErroAdequado(err, res)
-      }
-      else {  
-        try{
-          let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
-          verificarLinhasIdenticasNaPlanilha(linhas, cabecalho)
-          await apagarLinhasIdenticas(linhas, cabecalho)
-          const sqlInsert = montarInsert(cabecalho)
-          const client = await pool.connect()
-          for (const linha of linhas){
-            await client.query(sqlInsert, linha)
-          }
-          res.status(200).json({ message: "Dados carregados com sucesso" })
-          Auditoria.log(decoded.email, 'vagas.importarplanilha', {cabecalho: cabecalho, linhas: linhas}, null)          
-        }
-        catch (error){
-          console.log(chalk.red(`Erro ao importarPlanilha ${error}`))
-          res.status(401).json({ error })
-          Auditoria.log(decoded.email, 'vagas.importarplanilha', '', error)          
-        }
-      }
-    })
+  try{
+    let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
+    verificarLinhasIdenticasNaPlanilha(linhas, cabecalho)
+    await apagarLinhasIdenticas(linhas, cabecalho)
+    const sqlInsert = montarInsert(cabecalho)
+    const client = await pool.connect()
+    for (const linha of linhas){
+      await client.query(sqlInsert, linha)
+    }
+    res.status(200).json({ message: "Dados carregados com sucesso" })
+    Auditoria.log(req.app.usuario, 'vagas.importarplanilha', {cabecalho: cabecalho, linhas: linhas}, null)          
+  }
+  catch (error){
+    console.log(chalk.red(`Erro ao importarPlanilha ${error}`))
+    res.status(401).json({ error })
+    Auditoria.log(req.app.usuario, 'vagas.importarplanilha', '', error)          
+  }
 }
 
 //Apaga linhas iguais já persistidas 

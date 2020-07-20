@@ -16,40 +16,25 @@ app.use(bodyParser.json())
 const dotenv = require('dotenv')
 dotenv.config()
 
-//USUÁRIOS
-var Usuario = require('./app/services/usuario.js')
-app.post('/login', Usuario.login)
-app.post('/usuarios', Usuario.registrar)
-app.post('/usuarios/incluir', Usuario.incluir)
-app.post('/recuperarSenha', Usuario.recuperarSenha)
-app.post('/usuarios/:id', Usuario.alterar)
-app.delete('/usuarios', Usuario.excluir)
-app.post('/alterarSenha', Usuario.alterarSenha)
-app.get('/usuarios', Usuario.listar)
+//guarda usuario em requisicoes autenticadas, setado pelo permissao.js, usado para auditoria
+var usuario = ''
 
-//AUDITORIA
-var Auditoria = require('./app/services/auditoria.js')
-app.get('/auditoria', Auditoria.listar)
+var Rotas = require('./app/routes/routes.js')
 
-//Para ler arquivo enviado no posto
-const multer = require("multer")
-//VAGAS
-var Vagas = require('./app/services/vagas.js')
-//o nome tem que bater com o do parâmetro enviado no formdata
-app.post('/vagas/importar', multer().array("fileuploaded"), Vagas.importarPlanilha)
-app.get('/vagas', Vagas.listar)
-app.delete('/vagas', Vagas.excluir)
-app.post('/vagas/:id', Vagas.alterar)
-
-//WELCOME
-app.get('/bemvindo', (request, response, next) => {
-    response.status(200).json({ mensagem: "Seja bem vindo ao Vagas local" })
-} )
+//Middleware para checar autenticação
+var Permissao = require('./app/services/permissao.js')
+app.use(Permissao.autenticacao)
 
 
-//MENSAGENS
-var Mensagem = require('./app/services/mensagem.js')
-app.post('/mensagem', Mensagem.enviar)
+//Monta rotas
+Rotas.routes.map(rota => {
+    if (rota.outroMiddleware){
+        app[rota.metodohttp](rota.uri, rota.outroMiddleware, rota.componente[rota.metodo])
+    }
+    else{
+        app[rota.metodohttp](rota.uri, rota.componente[rota.metodo])
+    }
+})
 
 const chalk = require('chalk');
 app.listen(process.env.PORT, () => { console.log(chalk.underline.blue('Server up and listening at ' + process.env.PORT))})

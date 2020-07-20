@@ -10,21 +10,13 @@ const log = async (usuario, metodo, mensagem, erro) => {
 }
 
 const listar = async function (req, res, next) {
-    var jwt = require('jsonwebtoken')
-    jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-        if (err) {
-            Helper.enviaErroAdequado(err, res)
-        }
-        else {
-            try{     
-                var registrosAuditoria = await buscar()
-                res.status(200).json( {registrosAuditoria: registrosAuditoria})
-            }
-            catch(error){
-                res.status(401).json({error: `Error ao listar dados de auditoria ${error}`})
-            }
-        }
-    })
+    try{     
+        var registrosAuditoria = await buscar()
+        res.status(200).json( {registrosAuditoria: registrosAuditoria})
+    }
+    catch(error){
+        res.status(401).json({error: `Error ao listar dados de auditoria ${error}`})
+    }
 }
 
 const buscar = async (filtro) => {

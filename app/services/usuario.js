@@ -50,21 +50,13 @@ const login = async function (req, res, next) {
 }
 
 const listar = async function (req, res, next) {
-    var jwt = require('jsonwebtoken')
-    jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-        if (err) {
-            Helper.enviaErroAdequado(err, res)
-        }
-        else {
-            try{     
-                var usuarios = await buscar()
-                res.status(200).json( {usuarios: usuarios})
-            }
-            catch(error){
-                res.status(401).json({error: `Error ao listar usuários ${error}`})
-            }
-        }
-    })
+    try{     
+        var usuarios = await buscar()
+        res.status(200).json( {usuarios: usuarios})
+    }
+    catch(error){
+        res.status(401).json({error: `Error ao listar usuários ${error}`})
+    }
 }
 
 const buscar = async (filtro) => {
@@ -200,77 +192,53 @@ const recuperarSenha = async function (req, res, next) {
 }
 
 const alterar = async function (req, res, next) {
-    var jwt = require('jsonwebtoken')
-    jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-        if (err) {
-            Helper.enviaErroAdequado(err, res)
-        }
-        else {
-            try{
-                let usuario = req.body.usuario
-                await pool.query('update usuario set nome = $1, email = $2, snativo = $3 where usuarioid = $4', 
-                    [usuario.nome, usuario.email, usuario.snativo, usuario.usuarioid])
-                res.status(200).json( {mensagem: 'Dados alterados com sucesso'})
-                Auditoria.log(decoded.email, 'usuario.alterar', {...req.body.usuario, senha:''}, null)
-            }
-            catch(error){
-                res.status(401).json({error: `Problema ao gravar dados ${error}`})
-                Auditoria.log(decoded.email, 'usuario.alterar', {...req.body.usuario, senha:''}, error)
-            }
-        }
-    })
+    try{
+        let usuario = req.body.usuario
+        await pool.query('update usuario set nome = $1, email = $2, snativo = $3 where usuarioid = $4', 
+            [usuario.nome, usuario.email, usuario.snativo, usuario.usuarioid])
+        res.status(200).json( {mensagem: 'Dados alterados com sucesso'})
+        Auditoria.log(req.app.usuario, 'usuario.alterar', {...req.body.usuario, senha:''}, null)
+    }
+    catch(error){
+        res.status(401).json({error: `Problema ao gravar dados ${error}`})
+        Auditoria.log(req.app.usuario, 'usuario.alterar', {...req.body.usuario, senha:''}, error)
+    }
 }
 
 const excluir = async function (req, res) {
-    var jwt = require('jsonwebtoken')
-    jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-        if (err) {
-            Helper.enviaErroAdequado(err, res)
-        }
-        else {
-            try{
-                let ids = req.body.usuarios.map(usuario => usuario.usuarioid)
-                await pool.query('delete from usuario where usuarioid in (' + ids.join(',') + ')')
-                res.status(200).json( {mensagem: 'Usuário(s) excluído(s) com sucesso'})
-                Auditoria.log(decoded.email, 'usuario.excluir', 
-                    req.body.usuarios.map(usuario => ({...usuario, senha: ''})), null)
-            }
-            catch(error){
-                res.status(401).json({error: `Problema ao gravar dados ${error}`})
-                Auditoria.log(decoded.email, 'usuario.excluir', 
-                    req.body.usuarios.map(usuario => ({...usuario, senha: ''})), 
-                    error)
-            }
-        }
-    })
+    try{
+        let ids = req.body.usuarios.map(usuario => usuario.usuarioid)
+        await pool.query('delete from usuario where usuarioid in (' + ids.join(',') + ')')
+        res.status(200).json( {mensagem: 'Usuário(s) excluído(s) com sucesso'})
+        Auditoria.log(req.app.usuario, 'usuario.excluir', 
+            req.body.usuarios.map(usuario => ({...usuario, senha: ''})), null)
+    }
+    catch(error){
+        res.status(401).json({error: `Problema ao gravar dados ${error}`})
+        Auditoria.log(req.app.usuario, 'usuario.excluir', 
+            req.body.usuarios.map(usuario => ({...usuario, senha: ''})), 
+            error)
+    }
 }
 
 const alterarSenha = async function (req, res, next) {
-    var jwt = require('jsonwebtoken')
-    jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
-        if (err) {
-            Helper.enviaErroAdequado(err, res)
+    var usuario = await validar(req.body.usuario.email, req.body.usuario.senha)
+    if (usuario == null) {
+        res.status(401).json({ error: 'Senha atual incorreta' })
+    }
+    else {
+        try{
+            let usuario = req.body.usuario
+            await pool.query('update usuario set senha = $1 where usuarioid = $2', 
+                [req.body.senhaNova, usuario.usuarioid])
+            res.status(200).json( {mensagem: 'Senha alterada com sucesso'})
+            Auditoria.log(req.app.usuario, 'usuario.alterarSenha', req.body.usuario.email, null)
         }
-        else {
-            var usuario = await validar(req.body.usuario.email, req.body.usuario.senha)
-            if (usuario == null) {
-                res.status(401).json({ error: 'Senha atual incorreta' })
-            }
-            else {
-                try{
-                    let usuario = req.body.usuario
-                    await pool.query('update usuario set senha = $1 where usuarioid = $2', 
-                        [req.body.senhaNova, usuario.usuarioid])
-                    res.status(200).json( {mensagem: 'Senha alterada com sucesso'})
-                    Auditoria.log(decoded.email, 'usuario.alterarSenha', req.body.usuario.email, null)
-                }
-                catch(error){
-                    res.status(401).json({error: `Error ao alterar senha ${error}`})
-                    Auditoria.log(decoded.email, 'usuario.alterarSenha', req.body.usuario.email, error)
-                }
-            }
+        catch(error){
+            res.status(401).json({error: `Error ao alterar senha ${error}`})
+            Auditoria.log(req.app.usuario, 'usuario.alterarSenha', req.body.usuario.email, error)
         }
-    })
+    }
 }
 
 module.exports = {
