@@ -4,7 +4,7 @@ const chalk = require('chalk')
 const { Pool } = require('pg')
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-});
+})
 const Permissao = require('./permissao')
 var Auditoria = require('./auditoria.js')
 

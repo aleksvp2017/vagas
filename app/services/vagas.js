@@ -15,7 +15,6 @@ const alterar =  async (req, res) => {
       let vaga = req.body.vaga
       await validar(vaga)
       var sqlUpdate = montarUpdate(req.body.vaga)
-      console.log(sqlUpdate)
       let result = await pool.query(sqlUpdate)
       vaga = result.rows[0]
       res.status(200).json( {message: 'Dados alterados com sucesso', vaga})    

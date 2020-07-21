@@ -24,7 +24,7 @@ var Rotas = require('./app/routes/routes.js')
 //Middleware para checar autenticação
 var Permissao = require('./app/services/permissao.js')
 app.use(Permissao.autenticacao)
-
+app.use(Permissao.autorizacao)
 
 //Monta rotas
 Rotas.routes.map(rota => {
