@@ -4,13 +4,27 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 })
 
-const menu = (email) => {
-    var menuPadrao = ['Fale Conosco', 'Vagas']
-    if (email === process.env.EMAIL_FALECONSCO){
-        menuPadrao.push('Usuarios')
-        menuPadrao.push('Auditoria')
+const itensMenu = [
+    {nome: 'Fale Conosco', component: 'Mensagem'},
+    {nome: 'Vagas', component: 'Vagas'},
+    {nome: 'Usuarios', component: 'Usuario'},
+    {nome: 'Auditoria', component: 'Auditoria'}
+]
+
+const menu = async (email) => {
+    var menuUsuario = await obtemMenus(email)
+    return menuUsuario
+}
+
+const obtemMenus = async (email) =>{
+    var menuUsuario = []
+    for (itemMenu of itensMenu){
+        let temPermissao = await isTemPermissao(email, itemMenu.component)
+        if (temPermissao){
+            menuUsuario.push(itemMenu.nome)
+        }
     }
-    return menuPadrao
+    return menuUsuario 
 }
 
 
@@ -23,7 +37,7 @@ const autenticacao = (req, res, next) => {
                 Helper.enviaErroAdequado(err, res)
             }
             else {    
-                req.app.usuario = 'aleksvp@gmail.com'
+                req.app.usuario = decoded.email
                 next()
             }
         })
@@ -57,13 +71,15 @@ const isTemPermissao = async (usuario, componente, metodo) => {
     var permissoes = await (await pool.query(sql, [usuario, componente])).rows
     if (permissoes && permissoes.length > 0){
         permissoes.map(permissao => {
-            if (!permissao.metodo || permissao.metodo === metodo){
+            if (!permissao.metodo || !metodo || permissao.metodo === metodo){
                 temPermissao = true
             }
         })
     }
     return temPermissao
 }
+
+
 
 
 module.exports = {

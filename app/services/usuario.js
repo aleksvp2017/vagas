@@ -38,7 +38,8 @@ const login = async function (req, res, next) {
         }, process.env.SECRET, {
             expiresIn: 86400 //24h
         })
-        res.status(200).json({ auth: true, usuario: { ...usuario, senha: '', token: token, menu: Permissao.menu(usuario.email) }})
+        var menu = await Permissao.menu(usuario.email)
+        res.status(200).json({ auth: true, usuario: { ...usuario, senha: '', token: token, menu: menu }})
         Auditoria.log(usuario.email, 'usuario.login', usuario.email, null)
         next()
     }
