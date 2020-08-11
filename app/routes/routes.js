@@ -5,6 +5,7 @@ const multer = require("multer")
 const Mensagem = require('../services/mensagem.js')
 const Helper = require('../services/helper.js')
 const Permissao = require('../services/permissao.js')
+const Periodo = require('../services/periodopactuacao.js')
 
 var routes = [
     //nome do componente tem que bater com o nome do recurso 
@@ -29,6 +30,8 @@ var routes = [
     { uri: '/vagas/:[0-9]+', metodohttp: 'post', componente: Vagas,  metodo: 'alterar', requerAutenticacao: true},
     //MENSAGEM
     { uri: '/mensagem', metodohttp: 'post', componente: Mensagem, metodo: 'enviar', requerAutenticacao: true},
+    //PERIODO DE PACTUACAO
+    { uri: '/periodopactuacaoaberto', metodohttp: 'get', componente: Periodo, metodo: 'obter', requerAutenticacao: false},
 ];
 
 function isRotaRequerAutenticacao(uri, metodohttp) {

@@ -1,5 +1,4 @@
 const chalk = require('chalk')
-var fs = require('fs')
 var XLSX = require('xlsx')
 const { Pool } = require('pg')
 const pool = new Pool({
@@ -8,6 +7,7 @@ const pool = new Pool({
 const Planilha = require('./planilha.js')
 var Helper = require('./helper.js')
 var Auditoria = require('./auditoria.js')
+var Mensagem = require('./mensagem.js')
 
 
 const alterar =  async (req, res) => {
@@ -32,13 +32,15 @@ async function validar(vaga) {
     let coluna = Planilha.estrutura.colunas[campo[0].toUpperCase()]
     if (coluna) {
       let msgErro = ''
-      if (coluna.colunaDependente){
-        msgErro = await coluna.validar(campo[1], vaga[coluna.colunaDependente.toLowerCase()])
-      } else {
-        msgErro = coluna.validar(campo[1])
-      }
-      if (msgErro) {
-        throw msgErro
+      if (coluna.validar){
+        if (coluna.colunaDependente){
+          msgErro = await coluna.validar(campo[1], vaga[coluna.colunaDependente.toLowerCase()])
+        } else {
+          msgErro = coluna.validar(campo[1])
+        }
+        if (msgErro) {
+          throw msgErro
+        }
       }
     }
   }))
@@ -83,85 +85,95 @@ const listar = async (req, res) => {
 
 
 const importarPlanilha = async function (req, res) {
+  var jaRespondido = false
   try{
+    console.time('Planilha importada em ')
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
-    verificarLinhasIdenticasNaPlanilha(linhas, cabecalho)
-    await apagarLinhasIdenticas(linhas, cabecalho)
-    const sqlInsert = montarInsert(cabecalho)
-    const client = await pool.connect()
-    for (const linha of linhas){
-      await client.query(sqlInsert, linha)
+
+    //Esse limite é por duas coisas: usuário não ficar plantado esperando; 
+    //depois de um tempo, vue-resource refaz a requisição se não tiver tido resposta
+    if (linhas.length > 500){
+      jaRespondido = true
+      res.status(200).json({ message: "Não precisa esperar, você receberá um e-mail ao final do processamento da planilha." })
     }
-    res.status(200).json({ message: "Dados carregados com sucesso" })
-    Auditoria.log(req.app.usuario, 'vagas.importarplanilha', {cabecalho: cabecalho, linhas: linhas}, null)          
+    
+ 
+    //verificarLinhasIdenticasNaPlanilha(linhas, cabecalho)
+
+    //Na planilha as linhas podem vir com maior nível de detalhamento,
+    //por exemplo por escola. Assim é preciso agrupar essas linhas
+    linhas = await Planilha.agruparLinhasIdenticas(linhas, cabecalho)
+
+    //A depender do caso, pode ser um insert ou update
+    const sqlInsert = montarInsertPlanilha(cabecalho)
+    const sqlUpdate = montarUpdatePlanilha(cabecalho)
+
+    const client = await pool.connect()
+
+    for (const linha of linhas){
+      var sql = sqlInsert
+      var linhaExistente = await obterLinha(cabecalho, linha)
+      if (linhaExistente){
+        //verifica se tem algo a atualizar (ou seja, algum campo nao chave diferente)
+        var mudouAlgumCampoNaoChave = false
+        Planilha.estrutura.colunasNaoChave().map(colunaNaoChave => {
+          var valorCampo = obterCampo(cabecalho, linha, colunaNaoChave)
+          if (linhaExistente[colunaNaoChave.nomeColunaBanco] !== valorCampo){
+            mudouAlgumCampoNaoChave = true
+          }
+        })
+        if (mudouAlgumCampoNaoChave){
+          sql = sqlUpdate
+        }
+        else{
+          sql = null
+        }
+      }
+      if (sql){        
+        await client.query(sql, linha)
+      }
+    }
+
+    console.timeEnd('Planilha importada em ')
+    if (!jaRespondido){
+      res.status(200).json({ message: "Dados carregados com sucesso" })
+    }
+    else{
+      Mensagem.enviarEmail('Planilha processada', 'Planilha processada com sucesso', req.app.usuario)
+    }
+    Auditoria.log(req.app.usuario, 'vagas.importarplanilha', {cabecalho: cabecalho}, null)          
+    
   }
   catch (error){
     console.log(chalk.red(`Erro ao importarPlanilha ${error}`))
-    res.status(401).json({ error })
+    if (!jaRespondido){
+      res.status(401).json({ error })
+    }
+    else{
+      Mensagem.enviarEmail('Erro ao processar planilha', error, req.app.usuario)
+    }
     Auditoria.log(req.app.usuario, 'vagas.importarplanilha', '', error)          
   }
 }
 
-//Apaga linhas iguais já persistidas 
-async function apagarLinhasIdenticas(linhas, cabecalho){
-  var clausulasExclusao = ""
-  for (linha of linhas){
-    var clausulaExclusao = ""
-    Planilha.estrutura.colunasIdentificamUnicamente.map(coluna => {
-      let posicao = Helper.obterPosicao(cabecalho, coluna)
-      if (posicao !== -1){
-        clausulaExclusao += '\''+ linha[posicao] + '\','
-      }
-    })
-    clausulasExclusao += "(" + clausulaExclusao.slice(0, clausulaExclusao.length - 1) + "),"
-  }
-  var sqlDelete = montarDelete(cabecalho) + "(" + clausulasExclusao.slice(0, clausulasExclusao.length-1) + ")"
-  const client = await pool.connect()
-  await client.query(sqlDelete)
-}
-
-//Monta delete de acordo com as colunas que identificam unicamente uma vaga que estejam presentes no cabecalho
-const montarDelete = (cabecalho) => {
-  var colunas = []
-  Planilha.estrutura.colunasIdentificamUnicamente.map(coluna => {
-    if (Helper.obterPosicao(cabecalho, coluna) !== -1){
-      colunas.push(coluna)
+function obterCampo(cabecalho, linha, colunaNaoChave){
+  var valorCampo = ''
+  cabecalho.map((coluna, index) => {
+    if (Planilha.estrutura.obterColuna(coluna).nomeColunaBanco === colunaNaoChave){
+      valorCampo = linha[index]
     }
   })
-  return "delete from vaga where (" + colunas.join(',').toLowerCase() + ") in "
+  return valorCampo
 }
 
-//Verifica linhas identicas na propria planilha
-function verificarLinhasIdenticasNaPlanilha(linhas, cabecalho){
-  var linhasIdenticas = []
-  var indiceLinha = 0
-  for (linha of linhas){
-    var outrasLinhas = linhas.slice(indiceLinha+1)
-    for (outraLinha of outrasLinhas){
-      if (vagasIguais(linha, outraLinha, cabecalho)){
-          linhasIdenticas.push(linha)
-      }
-    }
-    indiceLinha ++
+async function obterLinha(cabecalho, linha){
+  var sql = montarConsultaPelosCamposChave(cabecalho, linha)
+  let vagas = await (await pool.query(sql)).rows
+  if (vagas && vagas.length > 0){
+    return vagas[0]
   }
-  if (linhasIdenticas.length > 0){
-    throw "Linhas idênticas encontradas na planilha: " + linhasIdenticas
-  }
+  return null
 }
-
-//Compara duas vagas pelos campos que identificam uma vaga
-function vagasIguais(vagaA, vagaB, cabecalho){
-  var snIguais = true
-  Planilha.estrutura.colunasIdentificamUnicamente.map( coluna => {
-    var indexColuna = Helper.obterPosicao(cabecalho, coluna)
-    if (vagaA[indexColuna] !== vagaB[indexColuna]){
-      snIguais = false
-    }
-  })
-
-  return snIguais
-}
-
 
 async function carregarLinhasPlanilha(req) {  
   //carrega o arquivo que veio na requisicao
@@ -171,27 +183,114 @@ async function carregarLinhasPlanilha(req) {
   }
   var stream = streamifier.createReadStream(req.files[0].buffer)
   var workbook = await transformStreamInWorkbook(stream)
-  //carrega a aba
-  var planilha = workbook.Sheets[Planilha.estrutura.nome]
-  if (planilha == null){
-    throw 'Nome da página / aba da planilha deve ser ' + Planilha.estrutura.nome
+  
+  //carrega a aba, tem um nome padrão, mas pode vir especificado na requisição
+  var nomeAba = Planilha.estrutura.nome
+  if (req.body.nomeAba){
+    nomeAba = req.body.nomeAba
   }
+  // console.log(workbook.SheetNames)
+  var planilha = workbook.Sheets[nomeAba]
+  if (planilha == null){
+    throw 'Não encontra página / aba da planilha com nome ' + nomeAba
+  }
+
   //carrega as linhas
   var matrizDados = XLSX.utils.sheet_to_json(planilha, { header: 1, raw: true, defval:null })
   if (matrizDados.length <= 1){
     throw 'Sem linhas de dados na planilha'
   }
 
-  //remove colunas nao previstos na estrutura da planilha 
-  let {cabecalho, colunasAExcluir} = removerColunasNaoPrevistasNaPlanilha(matrizDados[0])
+  matrizDados = removeLinhasComTodasColunasVazias(matrizDados)
+
+  //remove colunas nao previstas na estrutura da planilha 
+  //retorna, alem do cabecalho ja sem as colunas, o indice das colunas que deverão
+  //ser excluidas nas linhas
+  let {cabecalho, colunasAExcluir} = removerColunasNaoPrevistasNaPlanilhaDoCabecalho(matrizDados[0])
+  
   validarColunasObrigatorias(cabecalho)
+  
   //extrai as linhas da matriz - tira so o cabecalho
   var linhas = matrizDados.splice(1,matrizDados.length)
+  
+  //remove, das linhas, as colunas não previstas na estrutura da planilha
   linhas = removerColunasNaoPrevistasNaPlanilhaDasLinhas(linhas, colunasAExcluir)
+  
+  
+  //Alguns parametros podem ser enviados via requisicao ou em cada linha
+  //Faz sentido pois esses dados podem ser constantes em todas as linhas em alguns casos
+  //Exemplo: ano, mes, periodo de pactuacao
+  //Porém, especialmente pensando em grandes cargas, foi preciso manter a possibilidade 
+  //de manter esses dados linha a linha
+  incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho)
+  
   //valida linhas de acordo com o previsto na estrutura da planilha
+  //tem o await devido à possibilidade de validação que envolva BD
   await validarLinhas(cabecalho, linhas)
   
+  linhas = aplicarUpperCaseNasColunasNaoNumericas(linhas)
+
 return {linhas, cabecalho}
+}
+
+function aplicarUpperCaseNasColunasNaoNumericas(linhas){
+  var linhasAdaptadas = []
+  linhas.map(linha => {
+    var linhaAdaptada = []
+    linha.map(item => {
+      if (isNaN(item)){
+        linhaAdaptada.push(item.toUpperCase())
+      }
+      else{
+        linhaAdaptada.push(item)
+      }
+    })
+    linhasAdaptadas.push(linhaAdaptada)
+  })
+  return linhasAdaptadas
+}
+
+function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
+  //PERIODO
+  //Checa se já não tem na planilha e se veio na requisicao
+  if (!temColuna(Planilha.estrutura.colunas.PERIODOPACTUACAO, cabecalho) && req.body.periodoPactuacao){
+    linhas.map(linha => linha.push(req.body.periodoPactuacao))
+    cabecalho.push(Planilha.estrutura.obterColuna('periodopactuacao').nomeColunaBanco)
+  }
+  //MES
+  if (!temColuna(Planilha.estrutura.colunas.MES, cabecalho) && req.body.mes){
+    linhas.map(linha => linha.push(req.body.mes))
+    cabecalho.push(Planilha.estrutura.obterColuna('mes').nomeColunaBanco)
+  }  
+
+  //ANO
+  if (!temColuna(Planilha.estrutura.colunas.ANO, cabecalho) && req.body.ano){
+    linhas.map(linha => linha.push(req.body.ano))
+    cabecalho.push(Planilha.estrutura.obterColuna('ano').nomeColunaBanco)
+  }  
+
+}
+
+function temColuna(coluna, cabecalho){
+  var achou = false
+  coluna.getNomesPossiveis().map(nomePossivel => {
+    cabecalho.map(itemCabecalho => {
+      if (Helper.isIguais(itemCabecalho, nomePossivel)){
+        achou = true
+      }
+    })
+  })
+  return achou
+}
+
+function removeLinhasComTodasColunasVazias(matrizDados){
+  matrizDadosSemLinhasVazias = []
+  matrizDados.map(linha => {
+    if (!Planilha.isTodasColunasVazias(linha)){
+      matrizDadosSemLinhasVazias.push(linha)
+    }
+  })
+  return matrizDadosSemLinhasVazias
 }
 
 async function transformStreamInWorkbook(stream){
@@ -218,45 +317,104 @@ function removerColunasNaoPrevistasNaPlanilhaDasLinhas(linhas, colunasAExcluir){
 }
 
 //remove colunas nao previstas na estrutura da planilha
-function removerColunasNaoPrevistasNaPlanilha(cabecalho){
+function removerColunasNaoPrevistasNaPlanilhaDoCabecalho(cabecalho){
   var colunasAExcluir = []
-  cabecalho = cabecalho.filter((item, index) => {
-    if (Planilha.estrutura.colunasAtualizaveis.find(colunaAtualizavel => 
-        Helper.isIguais(colunaAtualizavel, item)))
-      {
-      return true
+  var cabecalhoFiltrado = []
+  cabecalho = cabecalho.map((item, index) => {
+    var achouColuna = false
+    Planilha.estrutura.colunasAtualizaveis().map(colunaAtualizavel => {
+      colunaAtualizavel.getNomesPossiveis().map(nomePossivel =>{
+        if (Helper.isIguais(nomePossivel, item)){
+          achouColuna = true
+        }
+      })
+    })
+    if (achouColuna){
+      cabecalhoFiltrado.push(item)
     }
     else{
       colunasAExcluir.push(index)
-      return false
     }
   })
+  cabecalho = cabecalhoFiltrado
   return {cabecalho, colunasAExcluir}
 }
 
 
+/* Monta o update considerando os campos que compoe a chave (e vieram na planilha)
+na clausula where e os campos que nao compoe a chave logica (e vieram na planilha)
+para serem atualizados */
+const montarUpdatePlanilha = (colunas) => {
+  var colunasNaoChave = Planilha.estrutura.colunasNaoChave()
+  var colunasNaoChavePlanilha = []
+  var colunasChavePlanilha = []
+  var parametrosNaoChave = []
+  var parametrosChave = []
+  //A montagem dos parametros foi feita assim, para poder preencher usando a propria
+  //linha tal qual ela veio, logo eles têm que seguir a ordem exata dos campos que lá estão
+  colunas.filter((coluna, index) => {
+    if (colunasNaoChave.indexOf(Planilha.estrutura.obterColuna(coluna)) > -1){
+      colunasNaoChavePlanilha.push(coluna)
+      parametrosNaoChave.push('$'+(index+1))
+    } else{
+      colunasChavePlanilha.push(coluna)
+      parametrosChave.push('$'+(index+1))
+    }
+  })
+  var colunasBancoNaoChave = Planilha.estrutura.colunasBanco(colunasNaoChavePlanilha)
+  var sql =  "update vaga set (" + colunasBancoNaoChave.join(',').toLowerCase() + ") = (" + parametrosNaoChave.join(',') + ")"; 
 
-const montarInsert = (colunas) => {
-  var colunasSemAcento = colunas.map(coluna => Helper.trocaCaracteresAcentuados(coluna))
-  return "insert into vaga (" + colunasSemAcento.join(',').toLowerCase() + ") values(" + montarValues(colunas.length) + ")"; 
+  colunasBanco = Planilha.estrutura.colunasBanco(colunasChavePlanilha)  
+  var where = " where (" + colunasBanco.join(',').toLowerCase() + ") = (" + parametrosChave.join(',') + ")";
+
+  return sql+where
 }
 
-const montarValues = (tamanho) => {
+const montarConsultaPelosCamposChave = (cabecalho, linha) => {
+  var colunasBancoChave = []
+  var parametrosChave = []
+  cabecalho.filter((colunaCabecalho, index) => {
+    var coluna = Planilha.estrutura.obterColuna(colunaCabecalho)
+    if (coluna.snChave){
+      colunasBancoChave.push(coluna.nomeColunaBanco)
+      parametrosChave.push(linha[index])
+    } 
+  })
+  var sql =  "select * from vaga where (" + colunasBancoChave.join(',').toLowerCase() + ") = ('" + parametrosChave.join("','") + "')"; 
+
+  return sql
+}
+
+const montarInsertPlanilha = (colunas) => {
+  var colunasBanco = Planilha.estrutura.colunasBanco(colunas)
+  return "insert into vaga (" + colunasBanco.join(',').toLowerCase() + ") values(" + montarValues(colunasBanco.length) + ")"; 
+}
+
+const montarValues = (tamanho, inicio) => {
   values = ""
-  for (i=1; i<= tamanho; i++){
+  var ind = (inicio ? inicio : 1)
+  for (i=ind; i<= (tamanho+ind-1); i++){
     values += "$"+ i + "," 
   }
   return values.substring(0, values.length-1)
 }
 
 const validarColunasObrigatorias = (cabecalho) => {
-  Planilha.estrutura.colunasObrigatorias.map((coluna) => {
-    if (!cabecalho.find(elemento => Helper.isIguais(elemento, coluna))){
+  Planilha.estrutura.colunasObrigatorias().map((coluna) => {
+    var achouColuna = false
+    coluna.getNomesPossiveis().map(nomePossivel => {
+      if (cabecalho.find(elemento => Helper.isIguais(elemento, nomePossivel))){  
+        achouColuna = true
+      }
+    })
+    if (!achouColuna){
       throw 'Coluna ' + coluna + ' não encontrada.'
     }
   })
 }
 
+//Valida conteúdo das celulas de acordo com métodos previstos na estrutura
+//da planilha
 const validarLinhas = async (cabecalho, linhas) => {
   for (let linha of linhas){
     var posicao = -1
@@ -265,39 +423,22 @@ const validarLinhas = async (cabecalho, linhas) => {
       var coluna = Planilha.estrutura.obterColuna(cabecalho[posicao])
         //Planilha.estrutura.colunas[cabecalho[posicao].toUpperCase()]
       if (coluna){
-        var msgValidacao = ''
-        if (coluna.colunaDependente){
-          msgValidacao = await coluna.validar(celula, 
-            linha[Helper.obterPosicao(cabecalho, coluna.colunaDependente)])
-            //linha[cabecalho.indexOf(coluna.colunaDependente)])
-        } else {
-          msgValidacao = coluna.validar(celula)
-        }
-        if (msgValidacao){
-          throw msgValidacao
+        if (coluna.validar){
+          var msgValidacao = ''
+          if (coluna.colunaDependente){
+            msgValidacao = await coluna.validar(celula, 
+              linha[Helper.obterPosicao(cabecalho, coluna.colunaDependente())])
+              //linha[cabecalho.indexOf(coluna.colunaDependente)])
+          } else {
+            msgValidacao = coluna.validar(celula)
+          }
+          if (msgValidacao){
+            throw msgValidacao
+          }
         }
       }
     }
   }
-
-
-  // linhas.map(async (linha) => {
-  //   await Promise.all(linha.map(async (celula, posicao) => {
-  //     var coluna = Planilha.estrutura.colunas[cabecalho[posicao].toUpperCase()]
-  //     if (coluna){
-  //       var msgValidacao = ''
-  //       if (coluna.depende){
-  //         msgValidacao = await coluna.validar(celula, linha[cabecalho.indexOf(coluna.depende)])
-  //       } else {
-  //         msgValidacao = coluna.validar(celula)
-  //       }
-        
-  //       if (msgValidacao){
-  //         throw msgValidacao
-  //       }
-  //     }
-  //   }))
-  // })
 }
 
 

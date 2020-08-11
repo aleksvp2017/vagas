@@ -46,6 +46,9 @@ function trocaCaracteresAcentuados(texto){
 }
 
 function isIguais(texto1, texto2){
+    //console.log('Texto1:',texto1, ' Texto2:', texto2)
+    texto1 = texto1.replace(/ /g, '')
+    texto2 = texto2.replace(/ /g, '')
     var parsedTexto1 = ''
     if (texto1){
         parsedTexto1 = texto1.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
@@ -59,12 +62,14 @@ function isIguais(texto1, texto2){
 }  
 
 //obtem posicao do texto no vetor, desconsiderando maiusculas/minusculas e acentos
-function obterPosicao(vetorDeTextos, texto){
+function obterPosicao(vetorDeTextos, coluna){
     var posicaoDoTexto = -1
     vetorDeTextos.map((item, indice) => {
-        if (isIguais(item, texto)){
-            posicaoDoTexto = indice
-        }
+        coluna.getNomesPossiveis().map(nomePossivel => {
+            if (isIguais(item, nomePossivel)){
+                posicaoDoTexto = indice
+            }    
+        })
     })
     return posicaoDoTexto
 }
