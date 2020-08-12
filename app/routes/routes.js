@@ -27,6 +27,8 @@ var routes = [
         outroMiddleware: multer().array("fileuploaded")},
     { uri: '/vagas', metodohttp: 'get', componente: Vagas,  metodo: 'listar', requerAutenticacao: true},
     { uri: '/vagas', metodohttp: 'delete', componente: Vagas,  metodo: 'excluir', requerAutenticacao: true},
+    { uri: '/vagasplanilha', metodohttp: 'delete', componente: Vagas,  metodo: 'excluirPlanilha', requerAutenticacao: true},
+    { uri: '/vagasplanilha', metodohttp: 'get', componente: Vagas,  metodo: 'listarPlanilhas', requerAutenticacao: true},
     { uri: '/vagas/:[0-9]+', metodohttp: 'post', componente: Vagas,  metodo: 'alterar', requerAutenticacao: true},
     //MENSAGEM
     { uri: '/mensagem', metodohttp: 'post', componente: Mensagem, metodo: 'enviar', requerAutenticacao: true},

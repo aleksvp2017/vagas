@@ -4,6 +4,14 @@ const Helper = require('./helper.js')
 const estrutura = {
     nome: 'Vagas',
     colunas: {
+      NOMEPLANILHA:{
+        nome: 'NOMEPLANILHA',
+        snAtualizavel: true,
+        nomeColunaBanco: 'nomeplanilha',
+        getNomesPossiveis(){
+          return ['nomeplanilha']
+        }
+      },
       PERIODOPACTUACAO: {
         nome: 'PERIODOPACTUACAO',
         snObrigatoria: false,

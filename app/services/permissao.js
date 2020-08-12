@@ -91,7 +91,7 @@ const autorizacao = async (req, res, next) => {
 }
 
 const isTemPermissao = async (usuario, uri, metodo) => {
-    //console.log(uri, metodo)
+    console.log(uri, metodo)
     var sql = " select * from permissao p " +
               " inner join operacao op on op.operacaoid = p.operacaoid " +
               " inner join recurso r on r.recursoid = op.recursoid " +

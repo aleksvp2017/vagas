@@ -73,6 +73,26 @@ const excluir =  async (req, res) => {
   } 
 }
 
+
+const excluirPlanilha =  async (req, res) => {
+  try{
+      let nomePlanilha = req.body.nomePlanilha
+      if (!nomePlanilha){
+        res.status(401).json( {message: 'Planilha não especificada'})      
+      }
+      else{
+        console.log('Nome da planilha:', nomePlanilha)
+        await pool.query('delete from vaga where nomeplanilha = \'' + nomePlanilha + '\'')
+        res.status(200).json( {message: 'Todas as vagas incluídas pela planilha ' + nomePlanilha + ' foram excluídas'})    
+        Auditoria.log(req.app.usuario, 'vagas.excluirPlanilha', req.body.vagas, null)              
+      }
+  }
+  catch (error){
+      res.status(401).json({error: `Error ao excluir vagas da planilha ${error}`})
+      Auditoria.log(req.app.usuario, 'vagas.excluirPlanilha', req.body.nomePlanilha, error)              
+  } 
+}
+
 const listar = async (req, res) => {
   try{
       let vagas = await (await pool.query('select * from vaga order by vagaid')).rows
@@ -80,6 +100,19 @@ const listar = async (req, res) => {
   }
   catch(error){
       console.log(chalk.red('erro ao buscar vagas', error))
+  }              
+}
+
+const listarPlanilhas = async (req, res) => {
+  try{
+      let planilhas = await (await pool.query('select distinct nomeplanilha from vaga')).rows
+      var planilhasNomes = []
+      planilhas.map(planilha => { planilhasNomes.push(planilha.nomeplanilha)})
+      console.log(planilhas)
+      res.status(200).json({ planilhas: planilhasNomes})
+  }
+  catch(error){
+      console.log(chalk.red('erro ao buscar planilhas', error))
   }              
 }
 
@@ -223,6 +256,9 @@ async function carregarLinhasPlanilha(req) {
   //Porém, especialmente pensando em grandes cargas, foi preciso manter a possibilidade 
   //de manter esses dados linha a linha
   incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho)
+
+
+  incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba)
   
   //valida linhas de acordo com o previsto na estrutura da planilha
   //tem o await devido à possibilidade de validação que envolva BD
@@ -248,6 +284,12 @@ function aplicarUpperCaseNasColunasNaoNumericas(linhas){
     linhasAdaptadas.push(linhaAdaptada)
   })
   return linhasAdaptadas
+}
+
+function incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba){
+  var hoje = new Date()
+  linhas.map(linha => linha.push(nomeAba + hoje.toLocaleTimeString() + ' ' + hoje.toLocaleDateString()))
+  cabecalho.push(Planilha.estrutura.colunas.NOMEPLANILHA.nomeColunaBanco)
 }
 
 function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
@@ -445,5 +487,5 @@ const validarLinhas = async (cabecalho, linhas) => {
   
 
 module.exports = {
-    importarPlanilha, listar, excluir, alterar 
+    importarPlanilha, listar, excluir, alterar, excluirPlanilha, listarPlanilhas
 }
