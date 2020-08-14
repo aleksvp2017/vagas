@@ -170,7 +170,7 @@ const estrutura = {
       CARGAHORARIA: {
         nome: 'CARGAHORARIA',
         snAtualizavel: true, 
-        snSomavel: true,
+        snSomavel: false,
         nomeColunaBanco: 'cargahoraria',
         validar(valor){
           valor = parseInt(valor)
