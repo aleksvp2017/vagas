@@ -81,10 +81,9 @@ const excluirPlanilha =  async (req, res) => {
         res.status(401).json( {message: 'Planilha não especificada'})      
       }
       else{
-        console.log('Nome da planilha:', nomePlanilha)
         await pool.query('delete from vaga where nomeplanilha = \'' + nomePlanilha + '\'')
         res.status(200).json( {message: 'Todas as vagas incluídas pela planilha ' + nomePlanilha + ' foram excluídas'})    
-        Auditoria.log(req.app.usuario, 'vagas.excluirPlanilha', req.body.vagas, null)              
+        Auditoria.log(req.app.usuario, 'vagas.excluirPlanilha', req.body.nomePlanilha, null)              
       }
   }
   catch (error){
@@ -223,7 +222,12 @@ async function carregarLinhasPlanilha(req) {
     nomeAba = req.body.nomeAba
   }
   // console.log(workbook.SheetNames)
-  var planilha = workbook.Sheets[nomeAba]
+  var planilha = null
+  workbook.SheetNames.map(aba => {
+    if (Helper.isIguais(aba, nomeAba)){
+      planilha = workbook.Sheets[aba]
+    }
+  })
   if (planilha == null){
     throw 'Não encontra página / aba da planilha com nome ' + nomeAba
   }
@@ -234,20 +238,20 @@ async function carregarLinhasPlanilha(req) {
     throw 'Sem linhas de dados na planilha'
   }
 
-  matrizDados = removeLinhasComTodasColunasVazias(matrizDados)
-
   //remove colunas nao previstas na estrutura da planilha 
   //retorna, alem do cabecalho ja sem as colunas, o indice das colunas que deverão
   //ser excluidas nas linhas
   let {cabecalho, colunasAExcluir} = removerColunasNaoPrevistasNaPlanilhaDoCabecalho(matrizDados[0])
-  
-  validarColunasObrigatorias(cabecalho)
+
   
   //extrai as linhas da matriz - tira so o cabecalho
   var linhas = matrizDados.splice(1,matrizDados.length)
-  
   //remove, das linhas, as colunas não previstas na estrutura da planilha
   linhas = removerColunasNaoPrevistasNaPlanilhaDasLinhas(linhas, colunasAExcluir)
+
+  linhas = removeLinhasComTodasColunasVazias(linhas)
+  
+  validarColunasObrigatorias(cabecalho)
   
   
   //Alguns parametros podem ser enviados via requisicao ou em cada linha
@@ -362,22 +366,29 @@ function removerColunasNaoPrevistasNaPlanilhaDasLinhas(linhas, colunasAExcluir){
 function removerColunasNaoPrevistasNaPlanilhaDoCabecalho(cabecalho){
   var colunasAExcluir = []
   var cabecalhoFiltrado = []
-  cabecalho = cabecalho.map((item, index) => {
+  var colunasJaEncontradas = [] //fiz esse controle para o caso de repetição da mesma coluna na planilha
+  var index = 0
+  for (item of cabecalho) {
     var achouColuna = false
-    Planilha.estrutura.colunasAtualizaveis().map(colunaAtualizavel => {
-      colunaAtualizavel.getNomesPossiveis().map(nomePossivel =>{
-        if (Helper.isIguais(nomePossivel, item)){
-          achouColuna = true
-        }
+    if (item != null){
+      Planilha.estrutura.colunasAtualizaveis().map(colunaAtualizavel => {
+        colunaAtualizavel.getNomesPossiveis().map(nomePossivel =>{
+          if (Helper.isIguais(item, nomePossivel) &&
+            colunasJaEncontradas.indexOf(colunaAtualizavel) == -1){
+            colunasJaEncontradas.push(colunaAtualizavel)
+            achouColuna = true
+          }
+        })
       })
-    })
+    }
     if (achouColuna){
       cabecalhoFiltrado.push(item)
     }
     else{
       colunasAExcluir.push(index)
     }
-  })
+    index ++
+  }
   cabecalho = cabecalhoFiltrado
   return {cabecalho, colunasAExcluir}
 }

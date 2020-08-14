@@ -29,7 +29,7 @@ const estrutura = {
         snAtualizavel: true,
         nomeColunaBanco: 'instituicao',
         getNomesPossiveis(){
-          return ['instituicao','sigladainstituicao']
+          return ['instituicao','sigladainstituicao', 'orgao']
         }, 
       },  
       UF: {
@@ -54,7 +54,7 @@ const estrutura = {
             // }
         //},
         getNomesPossiveis(){
-          return ['modalidadedeensino','modalidadeeducacional']
+          return ['modalidadedeensino','modalidadeeducacional','MODALIDADE DE OFERTA\n(Presencial / EAD)']
         },        
       },
       ACAO: {
@@ -84,7 +84,7 @@ const estrutura = {
           }
         },
         getNomesPossiveis(){
-          return ['tipodecurso', 'tipocurso']
+          return ['tipodecurso', 'tipocurso','TIPO DE CURSO\n(Técnico / FIC)']
         },        
       },  
       CURSO: {
@@ -164,7 +164,7 @@ const estrutura = {
           }
         },
         getNomesPossiveis(){
-          return ['aprovada', 'Vagas propostas (Digitar número de vagas)']
+          return ['aprovada', 'Vagas propostas (Digitar número de vagas)','QTDADE TOTAL DE VAGAS']
         }        
       },
       CARGAHORARIA: {
@@ -179,7 +179,7 @@ const estrutura = {
           }
         },
         getNomesPossiveis(){
-          return ['Carga horária do curso','Carga horária']
+          return ['Carga horária do curso','Carga horária','CARGA HORÁRIA\n(Técnico: CNCT /\nFIC: mínimo 160h)']
         }         
       }, 
       VALORHORAAULA: {
@@ -187,7 +187,7 @@ const estrutura = {
         snAtualizavel: true, 
         nomeColunaBanco: 'valorhoraaula',      
         getNomesPossiveis(){
-          return ['Valor Hora-Aluno (Ex.: 10,00)']
+          return ['Valor Hora-Aluno (Ex.: 10,00)','VALOR DA HORA-ALUNO\n(Presencial até R$ 10,00 / EAD até R$ 4,50)']
         }
       },            
       HOMOLOGADA: {
