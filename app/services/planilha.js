@@ -288,6 +288,7 @@ const estrutura = {
         nome: 'CONTRAPARTIDA',
         snAtualizavel: true,   
         snSomavel: false,
+        snChave: true,
         nomeColunaBanco: 'sncontrapartida',   
         getNomesPossiveis(){
           return ['contrapartida','sncontrapartida']
