@@ -107,7 +107,6 @@ const listarPlanilhas = async (req, res) => {
       let planilhas = await (await pool.query('select distinct nomeplanilha from vaga')).rows
       var planilhasNomes = []
       planilhas.map(planilha => { planilhasNomes.push(planilha.nomeplanilha)})
-      console.log(planilhas)
       res.status(200).json({ planilhas: planilhasNomes})
   }
   catch(error){
@@ -246,14 +245,16 @@ async function carregarLinhasPlanilha(req) {
   
   //extrai as linhas da matriz - tira so o cabecalho
   var linhas = matrizDados.splice(1,matrizDados.length)
+
   //remove, das linhas, as colunas não previstas na estrutura da planilha
   linhas = removerColunasNaoPrevistasNaPlanilhaDasLinhas(linhas, colunasAExcluir)
 
   linhas = removeLinhasComTodasColunasVazias(linhas)
+
+  replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho)
   
   validarColunasObrigatorias(cabecalho)
-  
-  
+    
   //Alguns parametros podem ser enviados via requisicao ou em cada linha
   //Faz sentido pois esses dados podem ser constantes em todas as linhas em alguns casos
   //Exemplo: ano, mes, periodo de pactuacao
@@ -263,7 +264,9 @@ async function carregarLinhasPlanilha(req) {
 
 
   incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba)
-  
+
+  substituiConteudoPorValoresPadronizado(linhas, cabecalho)
+
   //valida linhas de acordo com o previsto na estrutura da planilha
   //tem o await devido à possibilidade de validação que envolva BD
   await validarLinhas(cabecalho, linhas)
@@ -271,6 +274,41 @@ async function carregarLinhasPlanilha(req) {
   linhas = aplicarUpperCaseNasColunasNaoNumericas(linhas)
 
 return {linhas, cabecalho}
+}
+
+function replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho){
+  var indiceCabecalho = 0
+  for (nomeColuna of cabecalho) {
+    var colunas = Planilha.estrutura.obterColunas(nomeColuna)
+    if (colunas && colunas.length > 1){
+      cabecalho[indiceCabecalho] = colunas[0].nomeColunaBanco
+      var indiceColuna = 0
+      for (coluna of colunas){
+        if (indiceColuna > 0){
+          linhas = linhas.map(linha => {
+            linha[cabecalho.length]  = linha[indiceCabecalho]
+            return linha
+          })
+          cabecalho[cabecalho.length] = coluna.nomeColunaBanco
+        }
+        indiceColuna ++
+      }
+    }
+    indiceCabecalho++
+  }
+}
+
+function substituiConteudoPorValoresPadronizado(linhas, cabecalho){
+  for (linha of linhas){
+    var indiceColuna = 0
+    for (nomeColuna of cabecalho){
+      var coluna = Planilha.estrutura.obterColuna(nomeColuna)
+      if (coluna.snValoresPadrao){
+        linha[indiceColuna] = coluna.obterValorPadrao(linha[indiceColuna])
+      }
+      indiceColuna++
+    }
+  }
 }
 
 function aplicarUpperCaseNasColunasNaoNumericas(linhas){
@@ -314,6 +352,12 @@ function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
     linhas.map(linha => linha.push(req.body.ano))
     cabecalho.push(Planilha.estrutura.obterColuna('ano').nomeColunaBanco)
   }  
+
+    //SNCONTRAPARTIDA
+    if (!temColuna(Planilha.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.sncontrapartida){
+      linhas.map(linha => linha.push(req.body.sncontrapartida))
+      cabecalho.push(Planilha.estrutura.obterColuna('contrapartida').nomeColunaBanco)
+    }  
 
 }
 
@@ -461,7 +505,8 @@ const validarColunasObrigatorias = (cabecalho) => {
       }
     })
     if (!achouColuna){
-      throw 'Coluna ' + coluna + ' não encontrada.'
+      throw 'Coluna ' + coluna.nome + ' não encontrada. Nomes possíveis (acentos e espaços não importam):' + 
+        coluna.getNomesPossiveis().map(nome => (' ' + nome))
     }
   })
 }

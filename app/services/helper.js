@@ -63,6 +63,9 @@ function isIguais(texto1, texto2){
 
 function contem(texto1, texto2){
     //console.log('Texto1:',texto1, ' Texto2:', texto2)
+    if (texto1 == null || texto2 == null){
+        throw 'Tentando comparar textos com valores nulos: ' + texto1 + ' ' +  texto2
+    }
     texto1 = texto1.replace(/ /g, '')
     texto2 = texto2.replace(/ /g, '')
     var parsedTexto1 = ''

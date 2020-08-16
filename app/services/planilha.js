@@ -47,6 +47,7 @@ const estrutura = {
         snObrigatoria: true,  
         snChave: true,  
         snAtualizavel: true,
+        snValoresPadrao: true,
         nomeColunaBanco: 'modalidadedeensino',   
         //validar(valor){
             // if (valor != ''&& valor != 'EaD' && valor != 'Presencial') {
@@ -54,8 +55,41 @@ const estrutura = {
             // }
         //},
         getNomesPossiveis(){
-          return ['modalidadedeensino','modalidadeeducacional','MODALIDADE DE OFERTA\n(Presencial / EAD)']
+          return ['modalidadedeensino','modalidadeeducacional','MODALIDADE DE OFERTA\n(Presencial / EAD)',
+          'CICLO DE MATRÍCULA']
         },        
+        obterValorPadrao(valor){
+          var valorPadrao = ''
+          var valoresPossiveisEad = ['ead', 'ensinoadistancia','educacaoadistancia']
+          const EAD = 'EDUCAÇÃO À DISTÂNCIA'
+          var valoresPossiveisPresencial = ['presencial', 'educacaopresencial']
+          const PRESENCIAL = 'EDUCAÇÃO PRESENCIAL'
+
+          for (valorPossivel of valoresPossiveisEad) {
+            if (Helper.contem(valor, valorPossivel)){
+              valorPadrao = EAD
+              break
+            }
+          }
+
+          if (!valorPadrao){
+            for (valorPossivel of valoresPossiveisPresencial) {
+              if (Helper.contem(valor, valorPossivel)){
+                valorPadrao = PRESENCIAL
+                break
+              }
+            } 
+          }
+
+          if (!valorPadrao){
+            console.log('Valor ' + valor + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
+            valoresPossiveisEad + ' ou ' + valoresPossiveisPresencial)
+            throw 'Valor ' + valor + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
+            valoresPossiveisEad + ' ou ' + valoresPossiveisPresencial
+          }
+
+          return valorPadrao
+        }
       },
       ACAO: {
         nome: 'ACAO',
@@ -77,15 +111,43 @@ const estrutura = {
         snChave: true, 
         snAtualizavel: true,     
         nomeColunaBanco: 'tipodecurso',
-        validar(valor){
-          valor = valor.toUpperCase()
-          if (valor && valor != 'TÉCNICO' && valor != 'FIC' ) {
-              return 'Coluna ' + this.nome + ' deve ter valor Técnico ou FIC'
-          }
-        },
+        snValoresPadrao: true,
         getNomesPossiveis(){
-          return ['tipodecurso', 'tipocurso','TIPO DE CURSO\n(Técnico / FIC)']
+          return ['tipodecurso', 'tipocurso','TIPO DE CURSO\n(Técnico / FIC)',
+          'SUBTIPO CURSOS']
         },        
+        obterValorPadrao(valor){
+          var valorPadrao = ''
+          var valoresPossiveisFIC = ['fic', 'FORMAÇÃO INICIAL', 'FORMAÇÃO CONTINUADA']
+          const FIC = 'FIC'
+          var valoresPossiveisTecnico = ['tecnico']
+          const TECNICO = 'TECNICO'
+
+          for (valorPossivel of valoresPossiveisFIC) {
+            if (Helper.contem(valor, valorPossivel)){
+              valorPadrao = FIC
+              break
+            }
+          }
+
+          if (!valorPadrao){
+            for (valorPossivel of valoresPossiveisTecnico) {
+              if (Helper.contem(valor, valorPossivel)){
+                valorPadrao = TECNICO
+                break
+              }
+            } 
+          }
+
+          if (!valorPadrao){
+            console.log('Valor ' + valor + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
+            valoresPossiveisFIC + ' ou ' + valoresPossiveisTecnico)
+            throw 'Valor ' + valor + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
+            valoresPossiveisFIC + ' ou ' + valoresPossiveisTecnico
+          }
+
+          return valorPadrao
+        }        
       },  
       CURSO: {
         nome: 'CURSO',
@@ -219,9 +281,18 @@ const estrutura = {
           }
         },
         getNomesPossiveis(){
-          return ['matricula','matriculas']
+          return ['matricula','matriculas','QTD DE MATRICULAS']
         },        
-      },         
+      }, 
+      SNCONTRAPARTIDA: {
+        nome: 'CONTRAPARTIDA',
+        snAtualizavel: true,   
+        snSomavel: false,
+        nomeColunaBanco: 'sncontrapartida',   
+        getNomesPossiveis(){
+          return ['contrapartida','sncontrapartida']
+        },        
+      },                
     },
     colunasBanco(nomeColunas){
       var nomesColunasBanco = []
@@ -271,7 +342,21 @@ const estrutura = {
         })
       })
       return colunaEncontrada
-    },  
+    },
+    //tratar caso de mais de uma coluna poder ter o mesmo nome
+    //esse caso acontece quando em uma coluna da planilha tem a informacao correspondente 
+    //a mais de uma coluna do BD. Ex: ciclo de matricula que contem info de tipo de curso e modaliade
+    obterColunas(nome){
+      var colunasEncontradas = []
+      Object.entries(this.colunas).forEach(coluna => {
+        coluna[1].getNomesPossiveis().forEach(nomePossivel => {
+          if (Helper.isIguais(nomePossivel, nome)){
+            colunasEncontradas.push(coluna[1])
+          }
+        })
+      })
+      return colunasEncontradas
+    } ,
     colunasNaoChave(){
       var colunasNaoChave = []
       Object.entries(this.colunas).forEach(coluna => {
