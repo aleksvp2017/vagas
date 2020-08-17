@@ -299,15 +299,22 @@ function replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho){
 }
 
 function substituiConteudoPorValoresPadronizado(linhas, cabecalho){
+  var indiceLinha = 2 //por causa do cabecalho
   for (linha of linhas){
     var indiceColuna = 0
     for (nomeColuna of cabecalho){
       var coluna = Planilha.estrutura.obterColuna(nomeColuna)
       if (coluna.snValoresPadrao){
-        linha[indiceColuna] = coluna.obterValorPadrao(linha[indiceColuna])
+        try{
+          linha[indiceColuna] = coluna.obterValorPadrao(linha[indiceColuna])
+        }
+        catch (error){
+          throw error + ' Linha:' + indiceLinha
+        }
       }
       indiceColuna++
     }
+    indiceLinha++
   }
 }
 
