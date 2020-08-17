@@ -84,7 +84,7 @@ const estrutura = {
           if (!valorPadrao){
             console.log('Valor ' + valor + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
             valoresPossiveisEad + ' ou ' + valoresPossiveisPresencial)
-            throw 'Valor ' + valor + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
+            throw 'Valor ' + (valor != null? valor : 'vazio') + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
             valoresPossiveisEad + ' ou ' + valoresPossiveisPresencial
           }
 
@@ -142,7 +142,7 @@ const estrutura = {
           if (!valorPadrao){
             console.log('Valor ' + valor + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
             valoresPossiveisFIC + ' ou ' + valoresPossiveisTecnico)
-            throw 'Valor ' + valor + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
+            throw 'Valor ' + (valor != null? valor : 'vazio') + ' não é válido para a coluna. Coluna ' + this.nome + ' deve ter conter um dos seguintes valores: ' +
             valoresPossiveisFIC + ' ou ' + valoresPossiveisTecnico
           }
 
