@@ -117,8 +117,10 @@ const listarPlanilhas = async (req, res) => {
 
 const importarPlanilha = async function (req, res) {
   var jaRespondido = false
+  var passos = []
   try{
     console.time('Planilha importada em ')
+    passos.push('Carregando planilha')
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
 
     //Esse limite é por duas coisas: usuário não ficar plantado esperando; 
@@ -133,16 +135,20 @@ const importarPlanilha = async function (req, res) {
 
     //Na planilha as linhas podem vir com maior nível de detalhamento,
     //por exemplo por escola. Assim é preciso agrupar essas linhas
+    passos.push('Agrupando linhas identicas')
     linhas = await Planilha.agruparLinhasIdenticas(linhas, cabecalho)
 
     //A depender do caso, pode ser um insert ou update
+    passos.push('Montando sqls')
     const sqlInsert = montarInsertPlanilha(cabecalho)
     const sqlUpdate = montarUpdatePlanilha(cabecalho)
 
     const client = await pool.connect()
 
+    passos.push('Percorrendo linhas para inserir ou atualizar os dados')
     for (const linha of linhas){
       var sql = sqlInsert
+      passos.push('Verificando existencia da linha')
       var linhaExistente = await obterLinha(cabecalho, linha)
       if (linhaExistente){
         //verifica se tem algo a atualizar (ou seja, algum campo nao chave diferente)
@@ -160,9 +166,12 @@ const importarPlanilha = async function (req, res) {
           sql = null
         }
       }
-      if (sql){        
+      if (sql){       
+        passos.push('Executando sql:', sql) 
         await client.query(sql, linha)
+        passos = passos.slice(0, passos.length-1)
       }
+      passos = passos.slice(0, passos.length-1)
     }
 
     console.timeEnd('Planilha importada em ')
@@ -176,6 +185,7 @@ const importarPlanilha = async function (req, res) {
     
   }
   catch (error){
+    console.log('Passos realizados até o erro:', passos)
     console.log(chalk.red(`Erro ao importarPlanilha ${error}`))
     if (!jaRespondido){
       res.status(401).json({ error })
@@ -309,7 +319,7 @@ function substituiConteudoPorValoresPadronizado(linhas, cabecalho){
           linha[indiceColuna] = coluna.obterValorPadrao(linha[indiceColuna])
         }
         catch (error){
-          throw error + ' Linha:' + indiceLinha
+          throw error + ' (linha ' + indiceLinha + ')'
         }
       }
       indiceColuna++
