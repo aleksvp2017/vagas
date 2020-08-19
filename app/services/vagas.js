@@ -121,7 +121,7 @@ const importarPlanilha = async function (req, res) {
   try{
     console.time('Planilha importada em ')
     passos.push('Carregando planilha')
-    let {linhas, cabecalho} = await carregarLinhasPlanilha(req)   
+    let {linhas, cabecalho} = await carregarLinhasPlanilha(req, passos)   
 
     //Esse limite é por duas coisas: usuário não ficar plantado esperando; 
     //depois de um tempo, vue-resource refaz a requisição se não tiver tido resposta
@@ -216,8 +216,9 @@ async function obterLinha(cabecalho, linha){
   return null
 }
 
-async function carregarLinhasPlanilha(req) {  
+async function carregarLinhasPlanilha(req, passos) {  
   //carrega o arquivo que veio na requisicao
+  passos.push('Carregando arquivo com stramifier')
   const streamifier = require('streamifier')
   if (req.files.length <= 0){
     throw 'Nenhum arquivo encontrado'
@@ -242,6 +243,7 @@ async function carregarLinhasPlanilha(req) {
   }
 
   //carrega as linhas
+  passos.push('Carregando matriz de dados')
   var matrizDados = XLSX.utils.sheet_to_json(planilha, { header: 1, raw: true, defval:null })
   if (matrizDados.length <= 1){
     throw 'Sem linhas de dados na planilha'
@@ -250,6 +252,7 @@ async function carregarLinhasPlanilha(req) {
   //remove colunas nao previstas na estrutura da planilha 
   //retorna, alem do cabecalho ja sem as colunas, o indice das colunas que deverão
   //ser excluidas nas linhas
+  passos.push('Removendo colunas nao previstas do cabecalho')
   let {cabecalho, colunasAExcluir} = removerColunasNaoPrevistasNaPlanilhaDoCabecalho(matrizDados[0])
 
   
@@ -257,12 +260,16 @@ async function carregarLinhasPlanilha(req) {
   var linhas = matrizDados.splice(1,matrizDados.length)
 
   //remove, das linhas, as colunas não previstas na estrutura da planilha
+  passos.push('Removendo colunas nao previstas das linhas')
   linhas = removerColunasNaoPrevistasNaPlanilhaDasLinhas(linhas, colunasAExcluir)
 
+  passos.push('Removendo linhas vazias')
   linhas = removeLinhasComTodasColunasVazias(linhas)
 
-  replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho)
+  //passos.push('Replicando coluna mapeada para mais de uma coluna no BD')
+  //replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho)
   
+  passos.push('Validando colunas obrigatorias')
   validarColunasObrigatorias(cabecalho)
     
   //Alguns parametros podem ser enviados via requisicao ou em cada linha
@@ -270,11 +277,13 @@ async function carregarLinhasPlanilha(req) {
   //Exemplo: ano, mes, periodo de pactuacao
   //Porém, especialmente pensando em grandes cargas, foi preciso manter a possibilidade 
   //de manter esses dados linha a linha
+  passos.push('Incluindo parametros que vieram via requisicao')
   incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho)
 
-
+  passos.push('Incluindo nome da planilha de origem dos dados')
   incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba)
 
+  passos.push('Substituindo conteudo por valores padronizados')
   substituiConteudoPorValoresPadronizado(linhas, cabecalho)
 
   //valida linhas de acordo com o previsto na estrutura da planilha
@@ -358,21 +367,21 @@ function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
     linhas.map(linha => linha.push(req.body.periodoPactuacao))
     cabecalho.push(Planilha.estrutura.obterColuna('periodopactuacao').nomeColunaBanco)
   }
-  //MES
-  if (!temColuna(Planilha.estrutura.colunas.MES, cabecalho) && req.body.mes){
-    linhas.map(linha => linha.push(req.body.mes))
-    cabecalho.push(Planilha.estrutura.obterColuna('mes').nomeColunaBanco)
+  //DATAAPROVACAO
+  if (!temColuna(Planilha.estrutura.colunas.DATAAPROVACAO, cabecalho) && req.body.dataAprovacao){
+    linhas.map(linha => linha.push(req.body.dataAprovacao))
+    cabecalho.push(Planilha.estrutura.colunas.DATAAPROVACAO.nomeColunaBanco)
   }  
 
-  //ANO
-  if (!temColuna(Planilha.estrutura.colunas.ANO, cabecalho) && req.body.ano){
-    linhas.map(linha => linha.push(req.body.ano))
-    cabecalho.push(Planilha.estrutura.obterColuna('ano').nomeColunaBanco)
+  //DATAMATRICULA
+  if (!temColuna(Planilha.estrutura.colunas.DATAMATRICULA, cabecalho) && req.body.dataMatricula){
+    linhas.map(linha => linha.push(req.body.dataMatricula))
+    cabecalho.push(Planilha.estrutura.colunas.DATAMATRICULA.nomeColunaBanco)
   }  
 
     //SNCONTRAPARTIDA
-    if (!temColuna(Planilha.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.sncontrapartida){
-      linhas.map(linha => linha.push(req.body.sncontrapartida))
+    if (!temColuna(Planilha.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.snContrapartida){
+      linhas.map(linha => linha.push(req.body.snContrapartida))
       cabecalho.push(Planilha.estrutura.obterColuna('contrapartida').nomeColunaBanco)
     }  
 

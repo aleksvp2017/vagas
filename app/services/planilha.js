@@ -180,7 +180,29 @@ const estrutura = {
               }
           }
         }, */       
-      },              
+      },   
+      DATAAPROVACAO: {
+        nome: 'DATAAPROVACAO',
+        snAtualizavel: true,
+        nomeColunaBanco: 'dataaprovacao',
+        getNomesPossiveis(){
+          return ['dataaprovacao']
+        },   
+        formatar(valor){
+          return new Date(valor)
+        }         
+      },
+      DATAMATRICULA: {
+        nome: 'DATAMATRICULA',
+        snAtualizavel: true,
+        nomeColunaBanco: 'datamatricula',
+        getNomesPossiveis(){
+          return ['datamatricula']
+        }, 
+        formatar(valor){
+          return new Date(valor)
+        }                     
+      },      
       ANO: {
         nome: 'ANO',
         snChave: true,  
