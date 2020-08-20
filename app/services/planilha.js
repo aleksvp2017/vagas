@@ -202,40 +202,7 @@ const estrutura = {
         formatar(valor){
           return new Date(valor)
         }                     
-      },      
-      ANO: {
-        nome: 'ANO',
-        snChave: true,  
-        snAtualizavel: true,
-        nomeColunaBanco: 'ano',
-        getNomesPossiveis(){
-          return ['ano']
-        },            
-        validar(valor){
-          valor = parseInt(valor)
-          if (!Number.isInteger(valor)){
-              return 'Coluna ' + this.nome + ' deve ser um número inteiro'
-          }
-        },
-      },
-      MES: {
-        nome: 'MES',
-        snChave: true,   
-        snAtualizavel: true,  
-        nomeColunaBanco: 'mes',
-        validar(valor){
-          valor = parseInt(valor)
-          if (!Number.isInteger(valor)){
-              return 'Coluna ' + this.nome + ' deve ser um número inteiro'
-          }
-          if (valor < 1 || valor > 12){
-            return 'Coluna ' + this.nome + ' deve possuir valor entre 1 e 12'
-          }
-        },
-        getNomesPossiveis(){
-          return ['mes']
-        },         
-      },      
+      },            
       APROVADA: {
         nome: 'APROVADA',
         snAtualizavel: true, 

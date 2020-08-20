@@ -116,12 +116,13 @@ const listarPlanilhas = async (req, res) => {
 
 
 const importarPlanilha = async function (req, res) {
+  var resumoImportacao = []
   var jaRespondido = false
   var passos = []
   try{
-    console.time('Planilha importada em ')
+    var inicioDaImportacao = Date.now()
     passos.push('Carregando planilha')
-    let {linhas, cabecalho} = await carregarLinhasPlanilha(req, passos)   
+    let {linhas, cabecalho} = await carregarLinhasPlanilha(req, passos, resumoImportacao)   
 
     //Esse limite é por duas coisas: usuário não ficar plantado esperando; 
     //depois de um tempo, vue-resource refaz a requisição se não tiver tido resposta
@@ -137,6 +138,7 @@ const importarPlanilha = async function (req, res) {
     //por exemplo por escola. Assim é preciso agrupar essas linhas
     passos.push('Agrupando linhas identicas')
     linhas = await Planilha.agruparLinhasIdenticas(linhas, cabecalho)
+    resumoImportacao.push({nome:'Número de linhas depois do agrupamento',detalhe: linhas.length})
 
     //A depender do caso, pode ser um insert ou update
     passos.push('Montando sqls')
@@ -146,6 +148,8 @@ const importarPlanilha = async function (req, res) {
     const client = await pool.connect()
 
     passos.push('Percorrendo linhas para inserir ou atualizar os dados')
+    var linhasInseridas = 0
+    var linhasAlteradas = 0
     for (const linha of linhas){
       var sql = sqlInsert
       passos.push('Verificando existencia da linha')
@@ -160,11 +164,14 @@ const importarPlanilha = async function (req, res) {
           }
         })
         if (mudouAlgumCampoNaoChave){
+          linhasAlteradas++
           sql = sqlUpdate
         }
         else{
           sql = null
         }
+      } else{
+        linhasInseridas++
       }
       if (sql){       
         passos.push('Executando sql:', sql) 
@@ -173,16 +180,25 @@ const importarPlanilha = async function (req, res) {
       }
       passos = passos.slice(0, passos.length-1)
     }
+    resumoImportacao.push({nome:'Linhas inseridas',detalhe: linhasInseridas})
+    resumoImportacao.push({nome:'Linhas alteradas (já existiam na base antes da importação)',detalhe: linhasAlteradas})
 
-    console.timeEnd('Planilha importada em ')
+    var fimDaImportacao = Date.now()
+    var tempoTotal = ((fimDaImportacao - inicioDaImportacao)/1000) + ' segundos '
+    console.log(tempoTotal)
+    resumoImportacao.push({nome: 'Tempo de importação',detalhe:tempoTotal})
     if (!jaRespondido){
-      res.status(200).json({ message: "Dados carregados com sucesso" })
+      res.status(200).json({ message: "Dados carregados com sucesso", detalheMensagem: resumoImportacao })
+      var mensagem = formatarMensagem(resumoImportacao)
+      Mensagem.enviarEmail('e-Vagas: Planilha processada', mensagem, req.app.usuario)
     }
     else{
-      Mensagem.enviarEmail('Planilha processada', 'Planilha processada com sucesso', req.app.usuario)
+      var mensagem = formatarMensagem(resumoImportacao)
+      Mensagem.enviarEmail('e-Vagas: Planilha processada', mensagem, req.app.usuario)
     }
     Auditoria.log(req.app.usuario, 'vagas.importarplanilha', {cabecalho: cabecalho}, null)          
-    
+    console.log('Resumo da importação:')
+    console.log(resumoImportacao)
   }
   catch (error){
     console.log('Passos realizados até o erro:', passos)
@@ -195,6 +211,17 @@ const importarPlanilha = async function (req, res) {
     }
     Auditoria.log(req.app.usuario, 'vagas.importarplanilha', '', error)          
   }
+}
+
+function formatarMensagem(resumoImportacao){
+  var mensagem = ' <br/> Planilha processada com sucesso. <br/>'
+
+  resumoImportacao.map(item => {
+    mensagem += 
+      "<li><b>" + item.nome + " </b> : " + item.detalhe + "</li>"
+  })
+
+  return mensagem
 }
 
 function obterCampo(cabecalho, linha, colunaNaoChave){
@@ -216,7 +243,7 @@ async function obterLinha(cabecalho, linha){
   return null
 }
 
-async function carregarLinhasPlanilha(req, passos) {  
+async function carregarLinhasPlanilha(req, passos, resumoImportacao) {  
   //carrega o arquivo que veio na requisicao
   passos.push('Carregando arquivo com stramifier')
   const streamifier = require('streamifier')
@@ -241,6 +268,7 @@ async function carregarLinhasPlanilha(req, passos) {
   if (planilha == null){
     throw 'Não encontra página / aba da planilha com nome ' + nomeAba
   }
+  resumoImportacao.push({nome:'Nome da aba carregada', detalhe: nomeAba})
 
   //carrega as linhas
   passos.push('Carregando matriz de dados')
@@ -248,12 +276,14 @@ async function carregarLinhasPlanilha(req, passos) {
   if (matrizDados.length <= 1){
     throw 'Sem linhas de dados na planilha'
   }
+  resumoImportacao.push({nome:'Número de linhas na planilha (inclui linhas em branco)',detalhe: matrizDados.length})
 
   //remove colunas nao previstas na estrutura da planilha 
   //retorna, alem do cabecalho ja sem as colunas, o indice das colunas que deverão
   //ser excluidas nas linhas
   passos.push('Removendo colunas nao previstas do cabecalho')
   let {cabecalho, colunasAExcluir} = removerColunasNaoPrevistasNaPlanilhaDoCabecalho(matrizDados[0])
+  resumoImportacao.push({nome:'Colunas consideradas',detalhe: cabecalho})
 
   
   //extrai as linhas da matriz - tira so o cabecalho
@@ -265,6 +295,7 @@ async function carregarLinhasPlanilha(req, passos) {
 
   passos.push('Removendo linhas vazias')
   linhas = removeLinhasComTodasColunasVazias(linhas)
+  resumoImportacao.push({nome:'Número de linhas preenchidas na planilha',detalhe: linhas.length})
 
   //passos.push('Replicando coluna mapeada para mais de uma coluna no BD')
   //replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho)
@@ -274,7 +305,7 @@ async function carregarLinhasPlanilha(req, passos) {
     
   //Alguns parametros podem ser enviados via requisicao ou em cada linha
   //Faz sentido pois esses dados podem ser constantes em todas as linhas em alguns casos
-  //Exemplo: ano, mes, periodo de pactuacao
+  //Exemplo: dataaprovacao, datamatricula, periodo de pactuacao
   //Porém, especialmente pensando em grandes cargas, foi preciso manter a possibilidade 
   //de manter esses dados linha a linha
   passos.push('Incluindo parametros que vieram via requisicao')
@@ -474,7 +505,7 @@ const montarUpdatePlanilha = (colunas) => {
   var parametrosNaoChave = []
   var parametrosChave = []
   //A montagem dos parametros foi feita assim, para poder preencher usando a propria
-  //linha tal qual ela veio, logo eles têm que seguir a ordem exata dos campos que lá estão
+  //linha com argumento da query tal qual ela veio, logo eles têm que seguir a ordem exata dos campos que lá estão
   colunas.filter((coluna, index) => {
     if (colunasNaoChave.indexOf(Planilha.estrutura.obterColuna(coluna)) > -1){
       colunasNaoChavePlanilha.push(coluna)
