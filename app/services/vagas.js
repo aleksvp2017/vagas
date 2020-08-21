@@ -122,7 +122,9 @@ const importarPlanilha = async function (req, res) {
   try{
     var inicioDaImportacao = Date.now()
     passos.push('Carregando planilha')
+    console.log('Comecando a carregar planilha')
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req, passos, resumoImportacao)   
+    console.log('Planilha carregada')
 
     //Esse limite é por duas coisas: usuário não ficar plantado esperando; 
     //depois de um tempo, vue-resource refaz a requisição se não tiver tido resposta
@@ -295,7 +297,7 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
 
   passos.push('Removendo linhas vazias')
   linhas = removeLinhasComTodasColunasVazias(linhas)
-  resumoImportacao.push({nome:'Número de linhas preenchidas na planilha',detalhe: linhas.length})
+  resumoImportacao.push({nome:'Número de linhas com dados preenchidas na planilha ',detalhe: linhas.length})
 
   //passos.push('Replicando coluna mapeada para mais de uma coluna no BD')
   //replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho)
