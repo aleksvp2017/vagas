@@ -121,6 +121,7 @@ const importarPlanilha = async function (req, res) {
   var passos = []
   try{
     var inicioDaImportacao = Date.now()
+
     passos.push('Carregando planilha')
     console.log('Comecando a carregar planilha')
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req, passos, resumoImportacao)   
@@ -247,7 +248,7 @@ async function obterLinha(cabecalho, linha){
 
 async function carregarLinhasPlanilha(req, passos, resumoImportacao) {  
   //carrega o arquivo que veio na requisicao
-  passos.push('Carregando arquivo com stramifier')
+  passos.push('Carregando arquivo com streamifier')
   const streamifier = require('streamifier')
   if (req.files.length <= 0){
     throw 'Nenhum arquivo encontrado'
@@ -389,7 +390,8 @@ function aplicarUpperCaseNasColunasNaoNumericas(linhas){
 
 function incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba){
   var hoje = new Date()
-  linhas.map(linha => linha.push(nomeAba + hoje.toLocaleTimeString() + ' ' + hoje.toLocaleDateString()))
+  linhas.map(linha => linha.push(nomeAba + ' ' + hoje.toLocaleTimeString() + ' ' + 
+    hoje.toLocaleDateString('pt-br')))
   cabecalho.push(Planilha.estrutura.colunas.NOMEPLANILHA.nomeColunaBanco)
 }
 
