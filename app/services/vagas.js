@@ -275,7 +275,7 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
 
   //carrega as linhas
   passos.push('Carregando matriz de dados')
-  var matrizDados = XLSX.utils.sheet_to_json(planilha, { header: 1, raw: true, defval:null })
+  var matrizDados = XLSX.utils.sheet_to_json(planilha, { header: 1, raw: false, defval:null })
   if (matrizDados.length <= 1){
     throw 'Sem linhas de dados na planilha'
   }

@@ -197,7 +197,7 @@ const estrutura = {
         snAtualizavel: true,
         nomeColunaBanco: 'datamatricula',
         getNomesPossiveis(){
-          return ['datamatricula']
+          return ['datamatricula','Data fim da pré-matrícula']
         }, 
         formatar(valor){
           return new Date(valor)
