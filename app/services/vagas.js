@@ -116,6 +116,7 @@ const listarPlanilhas = async (req, res) => {
 
 
 const importarPlanilha = async function (req, res) {
+  var alterarLinhasJaExistentes = JSON.parse(req.body.snAlterarRegistrosExistentes)
   var resumoImportacao = []
   var jaRespondido = false
   var passos = []
@@ -134,7 +135,6 @@ const importarPlanilha = async function (req, res) {
       res.status(200).json({ message: "Não precisa esperar, você receberá um e-mail ao final do processamento da planilha." })
     }
     
- 
     //verificarLinhasIdenticasNaPlanilha(linhas, cabecalho)
 
     //Na planilha as linhas podem vir com maior nível de detalhamento,
@@ -158,20 +158,25 @@ const importarPlanilha = async function (req, res) {
       passos.push('Verificando existencia da linha')
       var linhaExistente = await obterLinha(cabecalho, linha)
       if (linhaExistente){
-        //verifica se tem algo a atualizar (ou seja, algum campo nao chave diferente)
-        var mudouAlgumCampoNaoChave = false
-        Planilha.estrutura.colunasNaoChave().map(colunaNaoChave => {
-          var valorCampo = obterCampo(cabecalho, linha, colunaNaoChave)
-          if (linhaExistente[colunaNaoChave.nomeColunaBanco] !== valorCampo){
-            mudouAlgumCampoNaoChave = true
-          }
-        })
-        if (mudouAlgumCampoNaoChave){
-          linhasAlteradas++
-          sql = sqlUpdate
+        if (!alterarLinhasJaExistentes){
+          sql = null
         }
         else{
-          sql = null
+          //verifica se tem algo a atualizar (ou seja, algum campo nao chave diferente)
+          var mudouAlgumCampoNaoChave = false
+          Planilha.estrutura.colunasNaoChave().map(colunaNaoChave => {
+            var valorCampo = obterCampo(cabecalho, linha, colunaNaoChave)
+            if (linhaExistente[colunaNaoChave.nomeColunaBanco] !== valorCampo){
+              mudouAlgumCampoNaoChave = true
+            }
+          })
+          if (mudouAlgumCampoNaoChave){
+            linhasAlteradas++
+            sql = sqlUpdate
+          }
+          else{
+            sql = null
+          }
         }
       } else{
         linhasInseridas++

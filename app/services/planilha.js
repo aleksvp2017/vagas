@@ -55,8 +55,8 @@ const estrutura = {
             // }
         //},
         getNomesPossiveis(){
-          return ['modalidadedeensino','modalidadeeducacional','MODALIDADE DE OFERTA\n(Presencial / EAD)',
-          'CICLO DE MATRÍCULA']
+          return ['modalidadedeensino','modalidadeeducacional','MODALIDADE DE OFERTA\n(Presencial / EAD)']
+          //,'CICLO DE MATRÍCULA']
         },        
         obterValorPadrao(valor){
           var valorPadrao = ''
@@ -197,7 +197,7 @@ const estrutura = {
         snAtualizavel: true,
         nomeColunaBanco: 'datamatricula',
         getNomesPossiveis(){
-          return ['datamatricula','Data fim da pré-matrícula']
+          return ['datamatricula','Data fim da pré-matrícula','data_criacao']
         }, 
         formatar(valor){
           return new Date(valor)
