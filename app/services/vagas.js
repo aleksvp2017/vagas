@@ -308,6 +308,10 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   //passos.push('Replicando coluna mapeada para mais de uma coluna no BD')
   //replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho)
   
+  passos.push('Inferindo tipo de curso pela carga horária quando não especificado')
+  infereTipoDeCurso(linhas, cabecalho)
+
+
   passos.push('Validando colunas obrigatorias')
   validarColunasObrigatorias(cabecalho)
     
@@ -398,6 +402,25 @@ function incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba){
   linhas.map(linha => linha.push(nomeAba + ' ' + hoje.toLocaleTimeString() + ' ' + 
     hoje.toLocaleDateString('pt-br')))
   cabecalho.push(Planilha.estrutura.colunas.NOMEPLANILHA.nomeColunaBanco)
+}
+
+function infereTipoDeCurso(linhas, cabecalho){
+  //Se não veio o tipo de curso, mas veio carga horária, infere o tipo pela carga
+  if (!temColuna(Planilha.estrutura.colunas.TIPODECURSO, cabecalho) && 
+        temColuna(Planilha.estrutura.colunas.CARGAHORARIA, cabecalho) ){
+    const CARGA_HORARIA_MINIMA_CURSO_TECNICO = 800
+    linhas.map(linha => {
+      var posicao = Helper.obterPosicao(cabecalho, Planilha.estrutura.colunas.CARGAHORARIA)
+      var cargaHoraria = parseInt(linha[posicao])
+      if (cargaHoraria >= CARGA_HORARIA_MINIMA_CURSO_TECNICO){
+        linha.push(Planilha.estrutura.colunas.TIPODECURSO.obterValorPadrao('tecnico'))
+      }
+      else{
+        linha.push(Planilha.estrutura.colunas.TIPODECURSO.obterValorPadrao('fic'))
+      }
+    })
+    cabecalho.push(Planilha.estrutura.colunas.TIPODECURSO.nomeColunaBanco)
+  }  
 }
 
 function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
