@@ -158,6 +158,7 @@ const importarPlanilha = async function (req, res) {
       passos.push('Verificando existencia da linha')
       var linhaExistente = await obterLinha(cabecalho, linha)
       if (linhaExistente){
+        console.log('Linha existente')
         if (!alterarLinhasJaExistentes){
           sql = null
         }
@@ -274,7 +275,13 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
     }
   })
   if (planilha == null){
-    throw 'Não encontra página / aba da planilha com nome ' + nomeAba
+    //Pega a primeira aba da planilha se não tiver passado o nome nem for o nome padrão
+    if (!req.body.nomeAba && workbook.SheetNames.length > 0){
+      planilha = workbook.Sheets[workbook.SheetNames[0]]
+    }
+    else{
+      throw 'Não encontra página / aba da planilha com nome ' + nomeAba
+    }
   }
   resumoImportacao.push({nome:'Nome da aba carregada', detalhe: nomeAba})
 
@@ -324,7 +331,7 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho)
 
   passos.push('Incluindo nome da planilha de origem dos dados')
-  incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba)
+  incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, req.files[0].originalname)
 
   passos.push('Substituindo conteudo por valores padronizados')
   substituiConteudoPorValoresPadronizado(linhas, cabecalho)
@@ -398,9 +405,10 @@ function aplicarUpperCaseNasColunasNaoNumericas(linhas){
 }
 
 function incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba){
-  var hoje = new Date()
-  linhas.map(linha => linha.push(nomeAba + ' ' + hoje.toLocaleTimeString() + ' ' + 
-    hoje.toLocaleDateString('pt-br')))
+  //var hoje = new Date()
+  // linhas.map(linha => linha.push(nomeAba + ' ' + hoje.toLocaleTimeString() + ' ' + 
+  //   hoje.toLocaleDateString('pt-br')))
+  linhas.map(linha => linha.push(nomeAba))    
   cabecalho.push(Planilha.estrutura.colunas.NOMEPLANILHA.nomeColunaBanco)
 }
 
@@ -567,7 +575,7 @@ const montarConsultaPelosCamposChave = (cabecalho, linha) => {
     } 
   })
   var sql =  "select * from vaga where (" + colunasBancoChave.join(',').toLowerCase() + ") = ('" + parametrosChave.join("','") + "')"; 
-
+  console.log(sql)
   return sql
 }
 
