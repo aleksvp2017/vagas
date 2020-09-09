@@ -451,9 +451,9 @@ function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
   }  
 
     //SNCONTRAPARTIDA
-    if (!temColuna(Planilha.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.snContrapartida){
-      linhas.map(linha => linha.push(req.body.snContrapartida))
-      cabecalho.push(Planilha.estrutura.obterColuna('contrapartida').nomeColunaBanco)
+    if (!temColuna(Planilha.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.sncontrapartida){
+      linhas.map(linha => linha.push(req.body.sncontrapartida))
+      cabecalho.push(Planilha.estrutura.colunas.SNCONTRAPARTIDA.nomeColunaBanco)
     }  
 
 }
