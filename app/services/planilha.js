@@ -241,7 +241,13 @@ const estrutura = {
         nomeColunaBanco: 'valorhoraaula',      
         getNomesPossiveis(){
           return ['Valor Hora-Aluno (Ex.: 10,00)','VALOR DA HORA-ALUNO\n(Presencial até R$ 10,00 / EAD até R$ 4,50)']
-        }
+        },
+        validar(valor){
+          valor = parseInt(valor)
+          if (!Number.isInteger(valor)){
+              return 'Coluna ' + this.nome + ' deve ser um número inteiro'
+          }
+        },        
       },            
       HOMOLOGADA: {
         nome: 'HOMOLOGADA',

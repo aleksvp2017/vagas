@@ -245,6 +245,7 @@ function obterCampo(cabecalho, linha, colunaNaoChave){
 
 async function obterLinha(cabecalho, linha){
   var sql = montarConsultaPelosCamposChave(cabecalho, linha)
+  console.log(sql)
   let vagas = await (await pool.query(sql)).rows
   if (vagas && vagas.length > 0){
     return vagas[0]
@@ -575,7 +576,6 @@ const montarConsultaPelosCamposChave = (cabecalho, linha) => {
     } 
   })
   var sql =  "select * from vaga where (" + colunasBancoChave.join(',').toLowerCase() + ") = ('" + parametrosChave.join("','") + "')"; 
-  console.log(sql)
   return sql
 }
 

@@ -60,6 +60,7 @@ const autenticacao = (req, res, next) => {
         var jwt = require('jsonwebtoken')
         jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
             if (err) {
+                console.log('Sem acesso na rota ' + req.originalUrl + ' método ' + req.method)
                 Helper.enviaErroAdequado(err, res)
             }
             else {    
@@ -79,6 +80,7 @@ const autorizacao = async (req, res, next) => {
         var rota = Rotas.obterRota(req.originalUrl, req.method)
         var temPermissao = await isTemPermissao(req.app.usuario, rota.uri, rota.metodo )
         if (!temPermissao){
+            console.log('Sem acesso na rota ' + rota.uri + ' método ' + rota.metodo + ' (usuario: ' + req.app.usuario + ')')
             res.status(401).send({error: 'Usuário não autorizado para operação '})
         }
         else{
