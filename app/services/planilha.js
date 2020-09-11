@@ -7,6 +7,7 @@ const estrutura = {
       NOMEPLANILHA:{
         nome: 'NOMEPLANILHA',
         snAtualizavel: true,
+        snChave: true,
         nomeColunaBanco: 'nomeplanilha',
         getNomesPossiveis(){
           return ['nomeplanilha']
@@ -209,7 +210,8 @@ const estrutura = {
         nome: 'APROVADA',
         snAtualizavel: true, 
         snSomavel: true,
-        nomeColunaBanco: 'aprovada',      
+        nomeColunaBanco: 'aprovada', 
+        snNumero: true,     
         validar(valor){
           valor = parseInt(valor)
           if (!Number.isInteger(valor)){
@@ -220,6 +222,21 @@ const estrutura = {
           return ['aprovada', 'Vagas propostas (Digitar número de vagas)','QTDADE TOTAL DE VAGAS']
         }        
       },
+      APROVADACONTRAPARTIDA: {
+        nome: 'APROVADACONTRAPARTIDA',
+        snAtualizavel: true, 
+        snSomavel: true,
+        nomeColunaBanco: 'aprovadacontrapartida',      
+        validar(valor){
+          valor = parseInt(valor)
+          if (!Number.isInteger(valor)){
+              return 'Coluna ' + this.nome + ' deve ser um número inteiro'
+          }
+        },
+        getNomesPossiveis(){
+          return ['aprovadacontrapartida']
+        }        
+      },      
       CARGAHORARIA: {
         nome: 'CARGAHORARIA',
         snAtualizavel: true, 
@@ -239,6 +256,7 @@ const estrutura = {
         nome: 'VALORHORAAULA',
         snAtualizavel: true, 
         nomeColunaBanco: 'valorhoraaula',      
+        snMoeda: true,
         getNomesPossiveis(){
           return ['Valor Hora-Aluno (Ex.: 10,00)','VALOR DA HORA-ALUNO\n(Presencial até R$ 10,00 / EAD até R$ 4,50)']
         },

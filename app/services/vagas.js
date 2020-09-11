@@ -337,6 +337,9 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   passos.push('Substituindo conteudo por valores padronizados')
   substituiConteudoPorValoresPadronizado(linhas, cabecalho)
 
+  passos.push('Substitui campos com valor monetarios por numérico')
+  substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho)
+
   //valida linhas de acordo com o previsto na estrutura da planilha
   //tem o await devido à possibilidade de validação que envolva BD
   await validarLinhas(cabecalho, linhas)
@@ -366,6 +369,39 @@ function replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho){
     }
     indiceCabecalho++
   }
+}
+
+function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
+  var indiceLinha = 2 //por causa do cabecalho
+  for (linha of linhas){
+    var indiceColuna = 0
+    for (nomeColuna of cabecalho){
+      var coluna = Planilha.estrutura.obterColuna(nomeColuna)
+      if (coluna.snMoeda){
+        try{
+          if (linha[indiceColuna]){
+            linha[indiceColuna] = linha[indiceColuna].replace('R$','').trim()
+          }
+        }
+        catch (error){
+          throw error + ' (linha ' + indiceLinha + ')'
+        }
+      }
+      else if (coluna.snNumero){
+        try{
+          if (linha[indiceColuna]){
+            linha[indiceColuna] = linha[indiceColuna].replace(',','')
+          }
+        }
+        catch (error){
+          throw error + ' (linha ' + indiceLinha + ')'
+        }
+      }
+
+      indiceColuna++
+    }
+    indiceLinha++
+  } 
 }
 
 function substituiConteudoPorValoresPadronizado(linhas, cabecalho){

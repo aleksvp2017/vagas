@@ -8,7 +8,6 @@
 CREATE TABLE public.vaga
 (
     vagaid integer NOT NULL DEFAULT nextval('vaga_vagaid_seq'::regclass),
-    ano integer,
     aprovada integer DEFAULT 0,
     homologada integer DEFAULT 0,
     matricula integer DEFAULT 0,
@@ -20,7 +19,6 @@ CREATE TABLE public.vaga
     tipodecurso character varying(100) COLLATE pg_catalog."default" DEFAULT 'FIC'::character varying,
     municipio character varying(500) COLLATE pg_catalog."default",
     curso character varying(500) COLLATE pg_catalog."default",
-    mes integer,
     instituicao character varying(500) COLLATE pg_catalog."default",
     cargahoraria integer,
     periodopactuacao character varying(500) COLLATE pg_catalog."default" NOT NULL,
@@ -28,6 +26,7 @@ CREATE TABLE public.vaga
     sncontrapartida boolean NOT NULL DEFAULT false,
     datamatricula character varying(50) COLLATE pg_catalog."default",
     dataaprovacao character varying(50) COLLATE pg_catalog."default",
+    aprovadacontrapartida integer default 0,
     CONSTRAINT vaga_pkey PRIMARY KEY (vagaid)
 )
 
