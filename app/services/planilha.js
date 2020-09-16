@@ -219,7 +219,8 @@ const estrutura = {
           }
         },
         getNomesPossiveis(){
-          return ['aprovada', 'Vagas propostas (Digitar número de vagas)','QTDADE TOTAL DE VAGAS']
+          return ['aprovada', 'Vagas propostas (Digitar número de vagas)','QTDADE TOTAL DE VAGAS','NOVO TOTAL DE VAGAS (vagas aprovadas + proposta de aumento)',
+          'Numero de Vagas']
         }        
       },
       APROVADACONTRAPARTIDA: {
@@ -257,8 +258,9 @@ const estrutura = {
         snAtualizavel: true, 
         nomeColunaBanco: 'valorhoraaula',      
         snMoeda: true,
+        snChave: true,
         getNomesPossiveis(){
-          return ['Valor Hora-Aluno (Ex.: 10,00)','VALOR DA HORA-ALUNO\n(Presencial até R$ 10,00 / EAD até R$ 4,50)']
+          return ['VALORHORAAULA','Valor Hora-Aluno (Ex.: 10,00)','VALOR DA HORA-ALUNO\n(Presencial até R$ 10,00 / EAD até R$ 4,50)']
         },
         validar(valor){
           valor = parseInt(valor)

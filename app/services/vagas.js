@@ -123,10 +123,9 @@ const importarPlanilha = async function (req, res) {
   try{
     var inicioDaImportacao = Date.now()
 
-    passos.push('Carregando planilha')
-    console.log('Comecando a carregar planilha')
+    adicionaPassos(passos,'Carregando planilha')
     let {linhas, cabecalho} = await carregarLinhasPlanilha(req, passos, resumoImportacao)   
-    console.log('Planilha carregada')
+    adicionaPassos(passos,'Planilha carregada')
 
     //Esse limite é por duas coisas: usuário não ficar plantado esperando; 
     //depois de um tempo, vue-resource refaz a requisição se não tiver tido resposta
@@ -139,23 +138,23 @@ const importarPlanilha = async function (req, res) {
 
     //Na planilha as linhas podem vir com maior nível de detalhamento,
     //por exemplo por escola. Assim é preciso agrupar essas linhas
-    passos.push('Agrupando linhas identicas')
+    adicionaPassos(passos,'Agrupando linhas identicas')
     linhas = await Planilha.agruparLinhasIdenticas(linhas, cabecalho)
     resumoImportacao.push({nome:'Número de linhas depois do agrupamento',detalhe: linhas.length})
 
     //A depender do caso, pode ser um insert ou update
-    passos.push('Montando sqls')
+    adicionaPassos(passos,'Montando sqls')
     const sqlInsert = montarInsertPlanilha(cabecalho)
     const sqlUpdate = montarUpdatePlanilha(cabecalho)
 
     const client = await pool.connect()
 
-    passos.push('Percorrendo linhas para inserir ou atualizar os dados')
+    adicionaPassos(passos,'Percorrendo linhas para inserir ou atualizar os dados')
     var linhasInseridas = 0
     var linhasAlteradas = 0
     for (const linha of linhas){
       var sql = sqlInsert
-      passos.push('Verificando existencia da linha')
+      //adicionaPassos(passos,'Verificando existencia da linha')
       var linhaExistente = await obterLinha(cabecalho, linha)
       if (linhaExistente){
         console.log('Linha existente')
@@ -183,11 +182,11 @@ const importarPlanilha = async function (req, res) {
         linhasInseridas++
       }
       if (sql){       
-        passos.push('Executando sql:', sql) 
+        //adicionaPassos(passos,'Executando sql:', sql) 
         await client.query(sql, linha)
-        passos = passos.slice(0, passos.length-1)
+        //passos = passos.slice(0, passos.length-1)
       }
-      passos = passos.slice(0, passos.length-1)
+      //passos = passos.slice(0, passos.length-1)
     }
     resumoImportacao.push({nome:'Linhas inseridas',detalhe: linhasInseridas})
     resumoImportacao.push({nome:'Linhas alteradas (já existiam na base antes da importação)',detalhe: linhasAlteradas})
@@ -245,7 +244,7 @@ function obterCampo(cabecalho, linha, colunaNaoChave){
 
 async function obterLinha(cabecalho, linha){
   var sql = montarConsultaPelosCamposChave(cabecalho, linha)
-  console.log(sql)
+  //console.log(sql)
   let vagas = await (await pool.query(sql)).rows
   if (vagas && vagas.length > 0){
     return vagas[0]
@@ -255,7 +254,7 @@ async function obterLinha(cabecalho, linha){
 
 async function carregarLinhasPlanilha(req, passos, resumoImportacao) {  
   //carrega o arquivo que veio na requisicao
-  passos.push('Carregando arquivo com streamifier')
+  adicionaPassos(passos,'Carregando arquivo com streamifier')
   const streamifier = require('streamifier')
   if (req.files.length <= 0){
     throw 'Nenhum arquivo encontrado'
@@ -287,40 +286,39 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   resumoImportacao.push({nome:'Nome da aba carregada', detalhe: nomeAba})
 
   //carrega as linhas
-  passos.push('Carregando matriz de dados')
+  adicionaPassos(passos,'Carregando matriz de dados')
   var matrizDados = XLSX.utils.sheet_to_json(planilha, { header: 1, raw: false, defval:null })
   if (matrizDados.length <= 1){
     throw 'Sem linhas de dados na planilha'
   }
   resumoImportacao.push({nome:'Número de linhas na planilha (inclui linhas em branco)',detalhe: matrizDados.length})
 
-  //remove colunas nao previstas na estrutura da planilha 
-  //retorna, alem do cabecalho ja sem as colunas, o indice das colunas que deverão
-  //ser excluidas nas linhas
-  passos.push('Removendo colunas nao previstas do cabecalho')
-  let {cabecalho, colunasAExcluir} = removerColunasNaoPrevistasNaPlanilhaDoCabecalho(matrizDados[0])
-  resumoImportacao.push({nome:'Colunas consideradas',detalhe: cabecalho})
-
-  
   //extrai as linhas da matriz - tira so o cabecalho
   var linhas = matrizDados.splice(1,matrizDados.length)
 
-  //remove, das linhas, as colunas não previstas na estrutura da planilha
-  passos.push('Removendo colunas nao previstas das linhas')
-  linhas = removerColunasNaoPrevistasNaPlanilhaDasLinhas(linhas, colunasAExcluir)
-
-  passos.push('Removendo linhas vazias')
+  adicionaPassos(passos,'Removendo linhas vazias')
   linhas = removeLinhasComTodasColunasVazias(linhas)
   resumoImportacao.push({nome:'Número de linhas com dados preenchidas na planilha ',detalhe: linhas.length})
+  
+  //remove colunas nao previstas na estrutura da planilha 
+  //retorna, alem do cabecalho ja sem as colunas, o indice das colunas que deverão
+  //ser excluidas nas linhas
+  adicionaPassos(passos,'Removendo colunas nao previstas do cabecalho')
+  let {cabecalho, colunasAExcluir} = removerColunasNaoPrevistasNaPlanilhaDoCabecalho(matrizDados[0])
+  resumoImportacao.push({nome:'Colunas consideradas',detalhe: cabecalho})
 
-  //passos.push('Replicando coluna mapeada para mais de uma coluna no BD')
+  //remove, das linhas, as colunas não previstas na estrutura da planilha
+  adicionaPassos(passos,'Removendo colunas nao previstas das linhas')
+  linhas = removerColunasNaoPrevistasNaPlanilhaDasLinhas(linhas, colunasAExcluir)
+
+  //adicionaPassos(passos,'Replicando coluna mapeada para mais de uma coluna no BD')
   //replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho)
   
-  passos.push('Inferindo tipo de curso pela carga horária quando não especificado')
+  adicionaPassos(passos,'Inferindo tipo de curso pela carga horária quando não especificado')
   infereTipoDeCurso(linhas, cabecalho)
 
 
-  passos.push('Validando colunas obrigatorias')
+  adicionaPassos(passos,'Validando colunas obrigatorias')
   validarColunasObrigatorias(cabecalho)
     
   //Alguns parametros podem ser enviados via requisicao ou em cada linha
@@ -328,16 +326,16 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   //Exemplo: dataaprovacao, datamatricula, periodo de pactuacao
   //Porém, especialmente pensando em grandes cargas, foi preciso manter a possibilidade 
   //de manter esses dados linha a linha
-  passos.push('Incluindo parametros que vieram via requisicao')
+  adicionaPassos(passos,'Incluindo parametros que vieram via requisicao')
   incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho)
 
-  passos.push('Incluindo nome da planilha de origem dos dados')
+  adicionaPassos(passos,'Incluindo nome da planilha de origem dos dados')
   incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, req.files[0].originalname)
 
-  passos.push('Substituindo conteudo por valores padronizados')
+  adicionaPassos(passos,'Substituindo conteudo por valores padronizados')
   substituiConteudoPorValoresPadronizado(linhas, cabecalho)
 
-  passos.push('Substitui campos com valor monetarios por numérico')
+  adicionaPassos(passos,'Substitui campos com valor monetarios por numérico')
   substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho)
 
   //valida linhas de acordo com o previsto na estrutura da planilha
@@ -347,6 +345,11 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   linhas = aplicarUpperCaseNasColunasNaoNumericas(linhas)
 
 return {linhas, cabecalho}
+}
+
+function adicionaPassos(passos, passo){
+  passos.push(passo)
+  console.log(passo)
 }
 
 function replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho){
@@ -380,7 +383,10 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
       if (coluna.snMoeda){
         try{
           if (linha[indiceColuna]){
-            linha[indiceColuna] = linha[indiceColuna].replace('R$','').trim()
+            linha[indiceColuna] = linha[indiceColuna].replace('R$','').replace('-','').trim()
+            if (linha[indiceColuna] === ''){
+              linha[indiceColuna] = 0
+            }
           }
         }
         catch (error){
@@ -395,6 +401,11 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
         }
         catch (error){
           throw error + ' (linha ' + indiceLinha + ')'
+        }
+      }
+      else {
+        if (linha[indiceColuna]){
+          linha[indiceColuna] = linha[indiceColuna].replace('\'','')
         }
       }
 
