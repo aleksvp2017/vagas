@@ -20,7 +20,7 @@ const estrutura = {
         snAtualizavel: true,
         nomeColunaBanco: 'periodopactuacao',
         getNomesPossiveis(){
-          return ['periodopactuacao','periododepactuacao']
+          return ['periodopactuacao','periododepactuacao','Repactuação']
         }, 
       },      
       INSTITUICAO: {
@@ -97,11 +97,6 @@ const estrutura = {
         snChave: true,   
         snAtualizavel: true,   
         nomeColunaBanco: 'acao',
-        validar(valor){
-          if (valor && valor != 'Repactuação' && valor != 'Fomentos novos') {
-              return 'Coluna ' + this.nome + ' deve ter valor Repactuação ou Fomentos novos'
-          }
-        },
         getNomesPossiveis(){
           return ['acao']
         },        
@@ -220,7 +215,7 @@ const estrutura = {
         },
         getNomesPossiveis(){
           return ['aprovada', 'Vagas propostas (Digitar número de vagas)','QTDADE TOTAL DE VAGAS','NOVO TOTAL DE VAGAS (vagas aprovadas + proposta de aumento)',
-          'Numero de Vagas']
+          'Numero de Vagas','VAGAS FINANCIADAS PRONATEC','Vagas (ALUNOS POR TURMA X QTDADE DE TURMAS)']
         }        
       },
       APROVADACONTRAPARTIDA: {
@@ -235,7 +230,7 @@ const estrutura = {
           }
         },
         getNomesPossiveis(){
-          return ['aprovadacontrapartida']
+          return ['aprovadacontrapartida','CONTRAPARTIDA MÍNIMA']
         }        
       },      
       CARGAHORARIA: {
@@ -263,12 +258,27 @@ const estrutura = {
           return ['VALORHORAAULA','Valor Hora-Aluno (Ex.: 10,00)','VALOR DA HORA-ALUNO\n(Presencial até R$ 10,00 / EAD até R$ 4,50)']
         },
         validar(valor){
-          valor = parseInt(valor)
-          if (!Number.isInteger(valor)){
-              return 'Coluna ' + this.nome + ' deve ser um número inteiro'
+          if (isNaN(valor)){
+              return 'Coluna ' + this.nome + ' deve ser um número'
           }
         },        
-      },            
+      },    
+      VALORAPROVADO: {
+        nome: 'VALORAPROVADO',
+        snAtualizavel: true, 
+        nomeColunaBanco: 'valoraprovado',      
+        snMoeda: true,
+        snChave: true,
+        snSomavel: true,
+        getNomesPossiveis(){
+          return ['VALORAPROVADO','CUSTO TOTAL\n(valor da hora-aluno X carga horária X nº vagas)']
+        },
+        validar(valor){
+          if (isNaN(valor)){
+              return 'Coluna ' + this.nome + ' deve ser um número'
+          }
+        },        
+      },                 
       HOMOLOGADA: {
         nome: 'HOMOLOGADA',
         snAtualizavel: true,   
@@ -310,8 +320,48 @@ const estrutura = {
         getNomesPossiveis(){
           return ['contrapartida','sncontrapartida']
         },        
-      },                
-    },
+      },
+      SEI: {
+        nome: 'SEI',
+        snAtualizavel: true,   
+        nomeColunaBanco: 'sei',   
+        getNomesPossiveis(){
+          return ['sei']
+        },        
+      },  
+      TED: {
+        nome: 'TED',
+        snAtualizavel: true,   
+        nomeColunaBanco: 'ted',   
+        getNomesPossiveis(){
+          return ['ted']
+        },        
+      },     
+      CONTAPRONATEC: {
+        nome: 'CONTAPRONATEC',
+        snAtualizavel: true,   
+        nomeColunaBanco: 'contapronatec',   
+        getNomesPossiveis(){
+          return ['CONTA PRONATEC']
+        },        
+      },  
+      FORMAOFERTA: {
+        nome: 'FORMAOFERTA',
+        snAtualizavel: true,   
+        nomeColunaBanco: 'formaoferta',   
+        getNomesPossiveis(){
+          return ['FORMA DE OFERTA\n(Concomitante, Subsequente ou Integrado EJA)']
+        },        
+      },   
+      MODALIDADEDEDEMANDA: {
+        nome: 'MODALIDADEDEDEMANDA',
+        snAtualizavel: true,   
+        nomeColunaBanco: 'modalidadedemanda',   
+        getNomesPossiveis(){
+          return ['Modalidade de Demanda']
+        },        
+      },                                  
+    },       
     colunasBanco(nomeColunas){
       var nomesColunasBanco = []
       nomeColunas.map(nome => {

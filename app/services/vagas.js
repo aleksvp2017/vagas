@@ -157,7 +157,6 @@ const importarPlanilha = async function (req, res) {
       //adicionaPassos(passos,'Verificando existencia da linha')
       var linhaExistente = await obterLinha(cabecalho, linha)
       if (linhaExistente){
-        console.log('Linha existente')
         if (!alterarLinhasJaExistentes){
           sql = null
         }
@@ -498,11 +497,23 @@ function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
     cabecalho.push(Planilha.estrutura.colunas.DATAMATRICULA.nomeColunaBanco)
   }  
 
-    //SNCONTRAPARTIDA
-    if (!temColuna(Planilha.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.sncontrapartida){
-      linhas.map(linha => linha.push(req.body.sncontrapartida))
-      cabecalho.push(Planilha.estrutura.colunas.SNCONTRAPARTIDA.nomeColunaBanco)
-    }  
+  //SNCONTRAPARTIDA
+  if (!temColuna(Planilha.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.sncontrapartida){
+    linhas.map(linha => linha.push(req.body.sncontrapartida))
+    cabecalho.push(Planilha.estrutura.colunas.SNCONTRAPARTIDA.nomeColunaBanco)
+  }  
+
+  //SEI
+  if (!temColuna(Planilha.estrutura.colunas.SEI, cabecalho) && req.body.sei){
+    linhas.map(linha => linha.push(req.body.sei))
+    cabecalho.push(Planilha.estrutura.colunas.SEI.nomeColunaBanco)
+  }  
+
+  //TED
+  if (!temColuna(Planilha.estrutura.colunas.TED, cabecalho) && req.body.ted){
+    linhas.map(linha => linha.push(req.body.ted))
+    cabecalho.push(Planilha.estrutura.colunas.TED.nomeColunaBanco)
+  }    
 
 }
 
