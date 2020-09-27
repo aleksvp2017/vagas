@@ -40,3 +40,17 @@ update dados set periodo = 'PACTUAçãO REDE FEDERAL FIC-EAD 2020' WHERE dataman
 
 select sum(matriculas), periodo from dados WHERE datamanual = '30/04/2020' group by 2;
 select * from dados WHERE datamanual = '30/04/2020' and periodo = 'PACTUAçãO NOVOS CAMINHOS' and matriculas > 0
+
+
+--REPLIQUEI 2019 EM ABRIL PARA QUE MATRICULA FIQUE SEMPRE ACUMULADA
+insert into vaga (aprovada, homologada, matricula, acao, valorhoraaula, uf, modalidadedeensino, tipodecurso, 
+				 municipio, curso, instituicao, cargahoraria, periodopactuacao, nomeplanilha, sncontrapartida,
+				 datamatricula, dataaprovacao, aprovadacontrapartida, ted, sei, valoraprovado, contapronatec,
+				 formaoferta, modalidadedemanda, origemreplicacao)
+select aprovada, homologada, matricula, acao, valorhoraaula, uf, modalidadedeensino, tipodecurso, 
+				 municipio, curso, instituicao, cargahoraria, periodopactuacao, nomeplanilha, sncontrapartida,
+				 '30/04/2020', dataaprovacao, aprovadacontrapartida, ted, sei, valoraprovado, contapronatec,
+				 formaoferta, modalidadedemanda, 'datamatricula 31/12/2019'
+from vaga 
+where datamatricula = '31/12/2019';
+

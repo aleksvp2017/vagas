@@ -36,3 +36,22 @@ select sum(matriculas) from dados WHERE datamanual = '28/06/2020';
 select sum(matriculas), periodo from dados WHERE datamanual = '28/06/2020' group by 2;
 
 update dados set periodo = 'CONTRAPARTIDA' where datamanual = '28/06/2020' and periodo is null;
+
+
+begin
+--REPLIQUEI 2019 EM JUNHO PARA QUE MATRICULA FIQUE SEMPRE ACUMULADA
+insert into vaga (aprovada, homologada, matricula, acao, valorhoraaula, uf, modalidadedeensino, tipodecurso, 
+				 municipio, curso, instituicao, cargahoraria, periodopactuacao, nomeplanilha, sncontrapartida,
+				 datamatricula, dataaprovacao, aprovadacontrapartida, ted, sei, valoraprovado, contapronatec,
+				 formaoferta, modalidadedemanda, origemreplicacao)
+select aprovada, homologada, matricula, acao, valorhoraaula, uf, modalidadedeensino, tipodecurso, 
+				 municipio, curso, instituicao, cargahoraria, periodopactuacao, nomeplanilha, sncontrapartida,
+				 '28/06/2020', dataaprovacao, aprovadacontrapartida, ted, sei, valoraprovado, contapronatec,
+				 formaoferta, modalidadedemanda, 'datamatricula 31/12/2019'
+from vaga 
+where datamatricula = '31/12/2019';
+commit
+select sum(matricula) from vaga where datamatricula = '28/06/2020'
+
+select distinct(nomeplanilha) from vaga where datamatricula = '28/06/2020'
+
