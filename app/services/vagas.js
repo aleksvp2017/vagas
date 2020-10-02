@@ -472,17 +472,28 @@ const listarInstituicoes = async (req, res) => {
 }
 
 async function infereRedePelaInstituicao(linhas, cabecalho){
+  var instituicoesNaoEncontradas = ''
   //Se não veio a rede
   if (!temColuna(Planilha.estrutura.colunas.REDE, cabecalho)){
     var instituicoes = await listarInstituicoes()
     linhas.map(linha => {
       var posicao = Helper.obterPosicao(cabecalho, Planilha.estrutura.colunas.INSTITUICAO)
       var instituicao = linha[posicao]
+      var achouInstituicao = false
       instituicoes.map(instituicaoCadastrada => {
         if (Helper.isIguais(instituicaoCadastrada.sigla, instituicao)){
           linha.push(instituicaoCadastrada.esfera)
+          achouInstituicao = true
         }
       })
+      //Se não achou a instituicao, o mais provável é que seja estadual
+      if (!achouInstituicao){
+        if (instituicoesNaoEncontradas.indexOf(instituicao) == -1){
+          instituicoesNaoEncontradas += instituicao
+          Mensagem.enviarEmail('e-Vagas: Instituição de ensino não cadastrada', 'Instituição não cadastrada: ' + instituicao, 'aleksvp@gmail.com')
+        }
+        linha.push('Estadual')
+      }
     })
     cabecalho.push(Planilha.estrutura.colunas.REDE.nomeColunaBanco)
   }  
@@ -542,13 +553,7 @@ function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
   if (!temColuna(Planilha.estrutura.colunas.TED, cabecalho) && req.body.ted){
     linhas.map(linha => linha.push(req.body.ted))
     cabecalho.push(Planilha.estrutura.colunas.TED.nomeColunaBanco)
-  }    
-
-  //ACAO
-  if (!temColuna(Planilha.estrutura.colunas.ACAO, cabecalho) && req.body.acao){
-    linhas.map(linha => linha.push(req.body.acao))
-    cabecalho.push(Planilha.estrutura.colunas.ACAO.nomeColunaBanco)
-  }      
+  }        
 
 }
 
