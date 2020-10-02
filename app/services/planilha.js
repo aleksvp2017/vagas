@@ -33,6 +33,16 @@ const estrutura = {
           return ['instituicao','sigladainstituicao', 'orgao']
         }, 
       },  
+      REDE: {
+        nome: 'REDE',
+        snObrigatoria: true,
+        snChave: true,
+        snAtualizavel: true,
+        nomeColunaBanco: 'rede',
+        getNomesPossiveis(){
+          return ['rede']
+        }, 
+      },       
       UF: {
         nome: 'UF',
         snObrigatoria: true,

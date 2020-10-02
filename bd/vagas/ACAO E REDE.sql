@@ -1,11 +1,8 @@
-select distinct periodopactuacao, acao, rede, modalidadedeensino, to_date(datamatricula,'DD/MM/YYYY') , sum(matricula)
-from vaga 
-where matricula > 0 
---and rede = 'Federal'
---and periodopactuacao = 'PACTUAÇÃO RESTRITA REDE FEDERAL 2020'
-group by 1,2,3,4,5
-order by to_date(datamatricula,'DD/MM/YYYY') ;
+--MARCA REDE
+update vaga set rede = 'Federal' where upper(instituicao) in (select upper(sigla) from instituicaoensino where esfera='Federal');
+update vaga set rede = 'Estados, DF, Municípios' where upper(instituicao) in (select upper(sigla) from instituicaoensino where esfera<>'Federal');
 
+--MARCA ACAO
 update vaga set acao = '' where matricula > 0;
 
 update vaga set acao = 'Repactuação - 2019' where matricula > 0 and periodopactuacao = 'PACTUAçãO NOVOS CAMINHOS' and datamatricula = '31/12/2019'
@@ -50,23 +47,12 @@ update vaga set acao = 'Rede Federal - Fase 1' where matricula > 0 and periodopa
 update vaga set acao = 'Rede Federal - Fase 1' where matricula > 0 and periodopactuacao ilike 'PACTUAçãO NOVOS CAMINHOS' 
 	and modalidadedeensino = 'EDUCAÇÃO À DISTÂNCIA' and datamatricula = '31/05/2020' and acao = ''
 	and rede = 'Federal';	
-
-/*
-select acao, rede, modalidadedeensino,  to_date(datamatricula,'DD/MM/YYYY'), sum(matricula)
-from vaga
-where periodopactuacao ilike 'PACTUAÇÃO NOVOS CAMINHOS'
-and matricula > 0
-group by 1,2,3,4
-
-select *
-from vaga where periodopactuacao ilike 'PACTUAÇÃO NOVOS CAMINHOS'
-and matricula > 0 and datamatricula = '31/05/2020' and acao = ''
-*/
-
-
-select distinct instituicao from vaga where periodopactuacao = 'PACTUAÇÃO NOVOS CAMINHOS'  and rede is null
-select * from instituicaoensino where sigla ilike 'AC-DOM_MOACIR (IEPTEC)'
-
-insert into instituicaoensino (sigla, esfera) values ('AC-DOM_MOACIR (IEPTEC)', 'Estadual')
-
-
+	
+--SETA ACAO DAS LINHAS COM APROVADAS
+update vaga set acao = 'Rede Federal - Fase 1' where periodopactuacao = 'PACTUAÇÃO REDE FEDERAL FIC-EAD 2020';
+update vaga set acao = 'Rede Federal - Fase 2' where periodopactuacao = 'PACTUAÇÃO REDE FEDERAL FIC-EAD 2020 2ª FASE';
+update vaga set acao = 'Rede Federal' where periodopactuacao = 'PACTUAÇÃO REDE FEDERAL FIC-EAD 2019';
+update vaga set acao = 'Repactuação - 2019' where periodopactuacao IN ('FASE1','FASE 2 EAD');
+update vaga set acao = 'Rede Federal - Fase 3' where periodopactuacao = 'PACTUAÇÃO REDE FEDERAL FIC-EAD 2020 3ª FASE';
+update vaga set acao = 'Repactuação - 2020' where periodopactuacao IN ('COVID');
+	

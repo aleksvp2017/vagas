@@ -316,6 +316,8 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   adicionaPassos(passos,'Inferindo tipo de curso pela carga horária quando não especificado')
   infereTipoDeCurso(linhas, cabecalho)
 
+  adicionaPassos(passos,'Infere rede pela instituição de ensino')
+  await infereRedePelaInstituicao(linhas, cabecalho)
 
   adicionaPassos(passos,'Validando colunas obrigatorias')
   validarColunasObrigatorias(cabecalho)
@@ -459,6 +461,33 @@ function incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba){
   cabecalho.push(Planilha.estrutura.colunas.NOMEPLANILHA.nomeColunaBanco)
 }
 
+const listarInstituicoes = async (req, res) => {
+  try{
+      let instituicoes = await (await pool.query('select sigla, esfera from instituicaoensino')).rows
+      return instituicoes
+  }
+  catch(error){
+      console.log(chalk.red('erro ao buscar instituicoes', error))
+  }              
+}
+
+async function infereRedePelaInstituicao(linhas, cabecalho){
+  //Se não veio a rede
+  if (!temColuna(Planilha.estrutura.colunas.REDE, cabecalho)){
+    var instituicoes = await listarInstituicoes()
+    linhas.map(linha => {
+      var posicao = Helper.obterPosicao(cabecalho, Planilha.estrutura.colunas.INSTITUICAO)
+      var instituicao = linha[posicao]
+      instituicoes.map(instituicaoCadastrada => {
+        if (Helper.isIguais(instituicaoCadastrada.sigla, instituicao)){
+          linha.push(instituicaoCadastrada.esfera)
+        }
+      })
+    })
+    cabecalho.push(Planilha.estrutura.colunas.REDE.nomeColunaBanco)
+  }  
+}
+
 function infereTipoDeCurso(linhas, cabecalho){
   //Se não veio o tipo de curso, mas veio carga horária, infere o tipo pela carga
   if (!temColuna(Planilha.estrutura.colunas.TIPODECURSO, cabecalho) && 
@@ -514,6 +543,12 @@ function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
     linhas.map(linha => linha.push(req.body.ted))
     cabecalho.push(Planilha.estrutura.colunas.TED.nomeColunaBanco)
   }    
+
+  //ACAO
+  if (!temColuna(Planilha.estrutura.colunas.ACAO, cabecalho) && req.body.acao){
+    linhas.map(linha => linha.push(req.body.acao))
+    cabecalho.push(Planilha.estrutura.colunas.ACAO.nomeColunaBanco)
+  }      
 
 }
 

@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch app",
+            "program": "${workspaceFolder}/app.js",
+            "env": {
+                "DATABASE_URL": "postgres://postgres:postgres@localhost:5432/postgres",
+                "PORT": "3001",
+                "EMAIL_FALECONSCO": "aleksvp@gmail.com",
+                "SECRET": "Nokia5800@",
+                "SECRET_PROVEDOR_EMAIL": "kfkkmgybshywfvxt",
+                "TWILIO_ACCOUNT_SID": "ACaffd68cc402ebcd3daafdd9fed794de1",
+                "TWILIO_AUTH_TOKEN": "a385cd635b6e478d9bb9dc63e4cbe5a8"
+            }
+        }
+    ]
+}
