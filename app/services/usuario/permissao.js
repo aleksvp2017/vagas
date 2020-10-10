@@ -22,11 +22,11 @@ routes.js na UI
 	direcionando para a página de login na tentativa de acesso não logado.
 	
 routesjs no BE
-	- De acordo com a uri e método htpp, mapeia o componente, o método respectivo e 
+	- De acordo com a uri e método http, mapeia o componente, o método respectivo e 
 	se requer ou não autenticação;
 */
 
-var Helper = require('./helper.js')
+var Helper = require('../helper/helper.js')
 const { Pool } = require('pg')
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -55,7 +55,7 @@ const obterMenu = async(usuario) => {
 }
 
 const autenticacao = (req, res, next) => {
-    var Rotas = require('../routes/routes.js')
+    var Rotas = require('../../routes/routes.js')
     if (Rotas.isRotaRequerAutenticacao(req.originalUrl, req.method)){
         var jwt = require('jsonwebtoken')
         jwt.verify(req.token, process.env.SECRET, async (err, decoded) => {
@@ -75,7 +75,7 @@ const autenticacao = (req, res, next) => {
 }
 
 const autorizacao = async (req, res, next) => {
-    var Rotas = require('../routes/routes.js')
+    var Rotas = require('../../routes/routes.js')
     if (Rotas.isRotaRequerAutenticacao(req.originalUrl, req.method)){
         var rota = Rotas.obterRota(req.originalUrl, req.method)
         var temPermissao = await isTemPermissao(req.app.usuario, rota.uri, rota.metodo )

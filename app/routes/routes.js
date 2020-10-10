@@ -1,11 +1,12 @@
-const Usuario = require('../services/usuario.js')
-const Auditoria = require('../services/auditoria.js')
-const Vagas = require('../services/vagas.js')
+const Usuario = require('../services/usuario/usuario.js')
+const Auditoria = require('../services/auditoria/auditoria.js')
+const Vagas = require('../services/vaga/vagas.js')
 const multer = require("multer")
-const Mensagem = require('../services/mensagem.js')
-const Helper = require('../services/helper.js')
-const Permissao = require('../services/permissao.js')
-const Periodo = require('../services/periodopactuacao.js')
+const Mensagem = require('../services/usuario/mensagem.js')
+const Helper = require('../services/helper/helper.js')
+const Permissao = require('../services/usuario/permissao.js')
+const Periodo = require('../services/vaga/periodopactuacao.js')
+const Painel = require('../services/vaga/painel.js')
 
 var routes = [
     //nome do componente tem que bater com o nome do recurso 
@@ -30,8 +31,12 @@ var routes = [
     { uri: '/vagasplanilha', metodohttp: 'delete', componente: Vagas,  metodo: 'excluirPlanilha', requerAutenticacao: true},
     { uri: '/vagasplanilha', metodohttp: 'get', componente: Vagas,  metodo: 'listarPlanilhas', requerAutenticacao: true},
     { uri: '/vagas/:[0-9]+', metodohttp: 'post', componente: Vagas,  metodo: 'alterar', requerAutenticacao: true},
+    { uri: '/vagas/colunas', metodohttp: 'get', componente: Vagas,  metodo: 'listarColunas', requerAutenticacao: true},
+    { uri: '/vagas/painel', metodohttp: 'post', componente: Vagas,  metodo: 'gerarRelatorio', requerAutenticacao: true},
     //MENSAGEM
     { uri: '/mensagem', metodohttp: 'post', componente: Mensagem, metodo: 'enviar', requerAutenticacao: true},
+    //PAINEL
+    { uri: '/painel', metodohttp: 'get', componente: Painel, metodo: 'consultar', requerAutenticacao: true},    
     //PERIODO DE PACTUACAO
     { uri: '/periodopactuacaoaberto', metodohttp: 'get', componente: Periodo, metodo: 'obter', requerAutenticacao: false},
 ];

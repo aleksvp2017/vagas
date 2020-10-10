@@ -1,12 +1,12 @@
-var Helper = require('./helper.js')
+var Helper = require('../helper/helper.js')
 var Mensagem = require('./mensagem.js')
 const chalk = require('chalk')
 const { Pool } = require('pg')
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 })
-const Permissao = require('./permissao')
-var Auditoria = require('./auditoria.js')
+const Permissao = require('./permissao.js')
+var Auditoria = require('../auditoria/auditoria.js')
 
 const validar = async (email, senha) => {
     var usuarioValido = null

@@ -39,7 +39,7 @@ else {
     var Rotas = require('./app/routes/routes.js')
 
     //Middleware para checar autenticação
-    var Permissao = require('./app/services/permissao.js')
+    var Permissao = require('./app/services/usuario/permissao.js')
     app.use(Permissao.autenticacao)
     app.use(Permissao.autorizacao)
 

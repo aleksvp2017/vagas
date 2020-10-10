@@ -4,10 +4,10 @@ const { Pool } = require('pg')
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 })
-const Planilha = require('./planilha.js')
-var Helper = require('./helper.js')
-var Auditoria = require('./auditoria.js')
-var Mensagem = require('./mensagem.js')
+const EstruturaVagas = require('./estruturavagas.js')
+var Helper = require('../helper/helper.js')
+var Auditoria = require('../auditoria/auditoria.js')
+var Mensagem = require('../usuario/mensagem.js')
 
 
 const alterar =  async (req, res) => {
@@ -29,7 +29,7 @@ const alterar =  async (req, res) => {
 
 async function validar(vaga) {
   await Promise.all(Object.entries(vaga).map(async (campo) => {
-    let coluna = Planilha.estrutura.colunas[campo[0].toUpperCase()]
+    let coluna = EstruturaVagas.estrutura.colunas[campo[0].toUpperCase()]
     if (coluna) {
       let msgErro = ''
       if (coluna.validar){
@@ -48,7 +48,7 @@ async function validar(vaga) {
 
 const montarUpdate = (vagas) => {
   var update = ''
-  Planilha.estrutura.colunasAtualizaveis.map(coluna =>{
+  EstruturaVagas.estrutura.colunasAtualizaveis.map(coluna =>{
       let valor = (vagas[coluna] !== null ? vagas[coluna] : null)
       if (valor == null){
         update += `,  ${coluna}  = ${valor}`
@@ -99,6 +99,7 @@ const listar = async (req, res) => {
   }
   catch(error){
       console.log(chalk.red('erro ao buscar vagas', error))
+      res.status(401).json({error: `Error ao consultar dados: ${error}`})
   }              
 }
 
@@ -139,7 +140,7 @@ const importarPlanilha = async function (req, res) {
     //Na planilha as linhas podem vir com maior nível de detalhamento,
     //por exemplo por escola. Assim é preciso agrupar essas linhas
     adicionaPassos(passos,'Agrupando linhas identicas')
-    linhas = await Planilha.agruparLinhasIdenticas(linhas, cabecalho)
+    linhas = await EstruturaVagas.agruparLinhasIdenticas(linhas, cabecalho)
     resumoImportacao.push({nome:'Número de linhas depois do agrupamento',detalhe: linhas.length})
 
     //A depender do caso, pode ser um insert ou update
@@ -163,7 +164,7 @@ const importarPlanilha = async function (req, res) {
         else{
           //verifica se tem algo a atualizar (ou seja, algum campo nao chave diferente)
           var mudouAlgumCampoNaoChave = false
-          Planilha.estrutura.colunasNaoChave().map(colunaNaoChave => {
+          EstruturaVagas.estrutura.colunasNaoChave().map(colunaNaoChave => {
             var valorCampo = obterCampo(cabecalho, linha, colunaNaoChave)
             if (linhaExistente[colunaNaoChave.nomeColunaBanco] !== valorCampo){
               mudouAlgumCampoNaoChave = true
@@ -234,7 +235,7 @@ function formatarMensagem(resumoImportacao){
 function obterCampo(cabecalho, linha, colunaNaoChave){
   var valorCampo = ''
   cabecalho.map((coluna, index) => {
-    if (Planilha.estrutura.obterColuna(coluna).nomeColunaBanco === colunaNaoChave){
+    if (EstruturaVagas.estrutura.obterColuna(coluna).nomeColunaBanco === colunaNaoChave){
       valorCampo = linha[index]
     }
   })
@@ -262,7 +263,7 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   var workbook = await transformStreamInWorkbook(stream)
   
   //carrega a aba, tem um nome padrão, mas pode vir especificado na requisição
-  var nomeAba = Planilha.estrutura.nome
+  var nomeAba = EstruturaVagas.estrutura.nome
   if (req.body.nomeAba){
     nomeAba = req.body.nomeAba
   }
@@ -356,7 +357,7 @@ function adicionaPassos(passos, passo){
 function replicaColunaDaPlanilhaMapeadaComMaisDeUmaColuna(linhas, cabecalho){
   var indiceCabecalho = 0
   for (nomeColuna of cabecalho) {
-    var colunas = Planilha.estrutura.obterColunas(nomeColuna)
+    var colunas = EstruturaVagas.estrutura.obterColunas(nomeColuna)
     if (colunas && colunas.length > 1){
       cabecalho[indiceCabecalho] = colunas[0].nomeColunaBanco
       var indiceColuna = 0
@@ -380,7 +381,7 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
   for (linha of linhas){
     var indiceColuna = 0
     for (nomeColuna of cabecalho){
-      var coluna = Planilha.estrutura.obterColuna(nomeColuna)
+      var coluna = EstruturaVagas.estrutura.obterColuna(nomeColuna)
       if (coluna.snMoeda){
         try{
           if (linha[indiceColuna]){
@@ -421,7 +422,7 @@ function substituiConteudoPorValoresPadronizado(linhas, cabecalho){
   for (linha of linhas){
     var indiceColuna = 0
     for (nomeColuna of cabecalho){
-      var coluna = Planilha.estrutura.obterColuna(nomeColuna)
+      var coluna = EstruturaVagas.estrutura.obterColuna(nomeColuna)
       if (coluna.snValoresPadrao){
         try{
           linha[indiceColuna] = coluna.obterValorPadrao(linha[indiceColuna])
@@ -458,7 +459,7 @@ function incluiNasLinhasPlanilhaDeOrigemDosDados(linhas, cabecalho, nomeAba){
   // linhas.map(linha => linha.push(nomeAba + ' ' + hoje.toLocaleTimeString() + ' ' + 
   //   hoje.toLocaleDateString('pt-br')))
   linhas.map(linha => linha.push(nomeAba))    
-  cabecalho.push(Planilha.estrutura.colunas.NOMEPLANILHA.nomeColunaBanco)
+  cabecalho.push(EstruturaVagas.estrutura.colunas.NOMEPLANILHA.nomeColunaBanco)
 }
 
 const listarInstituicoes = async (req, res) => {
@@ -474,10 +475,10 @@ const listarInstituicoes = async (req, res) => {
 async function infereRedePelaInstituicao(linhas, cabecalho){
   var instituicoesNaoEncontradas = ''
   //Se não veio a rede
-  if (!temColuna(Planilha.estrutura.colunas.REDE, cabecalho)){
+  if (!temColuna(EstruturaVagas.estrutura.colunas.REDE, cabecalho)){
     var instituicoes = await listarInstituicoes()
     linhas.map(linha => {
-      var posicao = Helper.obterPosicao(cabecalho, Planilha.estrutura.colunas.INSTITUICAO)
+      var posicao = Helper.obterPosicao(cabecalho, EstruturaVagas.estrutura.colunas.INSTITUICAO)
       var instituicao = linha[posicao]
       var achouInstituicao = false
       instituicoes.map(instituicaoCadastrada => {
@@ -495,64 +496,64 @@ async function infereRedePelaInstituicao(linhas, cabecalho){
         linha.push('Estadual')
       }
     })
-    cabecalho.push(Planilha.estrutura.colunas.REDE.nomeColunaBanco)
+    cabecalho.push(EstruturaVagas.estrutura.colunas.REDE.nomeColunaBanco)
   }  
 }
 
 function infereTipoDeCurso(linhas, cabecalho){
   //Se não veio o tipo de curso, mas veio carga horária, infere o tipo pela carga
-  if (!temColuna(Planilha.estrutura.colunas.TIPODECURSO, cabecalho) && 
-        temColuna(Planilha.estrutura.colunas.CARGAHORARIA, cabecalho) ){
+  if (!temColuna(EstruturaVagas.estrutura.colunas.TIPODECURSO, cabecalho) && 
+        temColuna(EstruturaVagas.estrutura.colunas.CARGAHORARIA, cabecalho) ){
     const CARGA_HORARIA_MINIMA_CURSO_TECNICO = 800
     linhas.map(linha => {
-      var posicao = Helper.obterPosicao(cabecalho, Planilha.estrutura.colunas.CARGAHORARIA)
+      var posicao = Helper.obterPosicao(cabecalho, EstruturaVagas.estrutura.colunas.CARGAHORARIA)
       var cargaHoraria = parseInt(linha[posicao])
       if (cargaHoraria >= CARGA_HORARIA_MINIMA_CURSO_TECNICO){
-        linha.push(Planilha.estrutura.colunas.TIPODECURSO.obterValorPadrao('tecnico'))
+        linha.push(EstruturaVagas.estrutura.colunas.TIPODECURSO.obterValorPadrao('tecnico'))
       }
       else{
-        linha.push(Planilha.estrutura.colunas.TIPODECURSO.obterValorPadrao('fic'))
+        linha.push(EstruturaVagas.estrutura.colunas.TIPODECURSO.obterValorPadrao('fic'))
       }
     })
-    cabecalho.push(Planilha.estrutura.colunas.TIPODECURSO.nomeColunaBanco)
+    cabecalho.push(EstruturaVagas.estrutura.colunas.TIPODECURSO.nomeColunaBanco)
   }  
 }
 
 function incluiNasLinhasParametrosViaRequisicao(req, linhas, cabecalho){
   //PERIODO
   //Checa se já não tem na planilha e se veio na requisicao
-  if (!temColuna(Planilha.estrutura.colunas.PERIODOPACTUACAO, cabecalho) && req.body.periodoPactuacao){
+  if (!temColuna(EstruturaVagas.estrutura.colunas.PERIODOPACTUACAO, cabecalho) && req.body.periodoPactuacao){
     linhas.map(linha => linha.push(req.body.periodoPactuacao))
-    cabecalho.push(Planilha.estrutura.obterColuna('periodopactuacao').nomeColunaBanco)
+    cabecalho.push(EstruturaVagas.estrutura.obterColuna('periodopactuacao').nomeColunaBanco)
   }
   //DATAAPROVACAO
-  if (!temColuna(Planilha.estrutura.colunas.DATAAPROVACAO, cabecalho) && req.body.dataAprovacao){
+  if (!temColuna(EstruturaVagas.estrutura.colunas.DATAAPROVACAO, cabecalho) && req.body.dataAprovacao){
     linhas.map(linha => linha.push(req.body.dataAprovacao))
-    cabecalho.push(Planilha.estrutura.colunas.DATAAPROVACAO.nomeColunaBanco)
+    cabecalho.push(EstruturaVagas.estrutura.colunas.DATAAPROVACAO.nomeColunaBanco)
   }  
 
   //DATAMATRICULA
-  if (!temColuna(Planilha.estrutura.colunas.DATAMATRICULA, cabecalho) && req.body.dataMatricula){
+  if (!temColuna(EstruturaVagas.estrutura.colunas.DATAMATRICULA, cabecalho) && req.body.dataMatricula){
     linhas.map(linha => linha.push(req.body.dataMatricula))
-    cabecalho.push(Planilha.estrutura.colunas.DATAMATRICULA.nomeColunaBanco)
+    cabecalho.push(EstruturaVagas.estrutura.colunas.DATAMATRICULA.nomeColunaBanco)
   }  
 
   //SNCONTRAPARTIDA
-  if (!temColuna(Planilha.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.sncontrapartida){
+  if (!temColuna(EstruturaVagas.estrutura.colunas.SNCONTRAPARTIDA, cabecalho) && req.body.sncontrapartida){
     linhas.map(linha => linha.push(req.body.sncontrapartida))
-    cabecalho.push(Planilha.estrutura.colunas.SNCONTRAPARTIDA.nomeColunaBanco)
+    cabecalho.push(EstruturaVagas.estrutura.colunas.SNCONTRAPARTIDA.nomeColunaBanco)
   }  
 
   //SEI
-  if (!temColuna(Planilha.estrutura.colunas.SEI, cabecalho) && req.body.sei){
+  if (!temColuna(EstruturaVagas.estrutura.colunas.SEI, cabecalho) && req.body.sei){
     linhas.map(linha => linha.push(req.body.sei))
-    cabecalho.push(Planilha.estrutura.colunas.SEI.nomeColunaBanco)
+    cabecalho.push(EstruturaVagas.estrutura.colunas.SEI.nomeColunaBanco)
   }  
 
   //TED
-  if (!temColuna(Planilha.estrutura.colunas.TED, cabecalho) && req.body.ted){
+  if (!temColuna(EstruturaVagas.estrutura.colunas.TED, cabecalho) && req.body.ted){
     linhas.map(linha => linha.push(req.body.ted))
-    cabecalho.push(Planilha.estrutura.colunas.TED.nomeColunaBanco)
+    cabecalho.push(EstruturaVagas.estrutura.colunas.TED.nomeColunaBanco)
   }        
 
 }
@@ -572,7 +573,7 @@ function temColuna(coluna, cabecalho){
 function removeLinhasComTodasColunasVazias(matrizDados){
   matrizDadosSemLinhasVazias = []
   matrizDados.map(linha => {
-    if (!Planilha.isTodasColunasVazias(linha)){
+    if (!EstruturaVagas.isTodasColunasVazias(linha)){
       matrizDadosSemLinhasVazias.push(linha)
     }
   })
@@ -611,7 +612,7 @@ function removerColunasNaoPrevistasNaPlanilhaDoCabecalho(cabecalho){
   for (item of cabecalho) {
     var achouColuna = false
     if (item != null){
-      Planilha.estrutura.colunasAtualizaveis().map(colunaAtualizavel => {
+      EstruturaVagas.estrutura.colunasAtualizaveis().map(colunaAtualizavel => {
         colunaAtualizavel.getNomesPossiveis().map(nomePossivel =>{
           if (Helper.isIguais(item, nomePossivel) &&
             colunasJaEncontradas.indexOf(colunaAtualizavel) == -1){
@@ -638,7 +639,7 @@ function removerColunasNaoPrevistasNaPlanilhaDoCabecalho(cabecalho){
 na clausula where e os campos que nao compoe a chave logica (e vieram na planilha)
 para serem atualizados */
 const montarUpdatePlanilha = (colunas) => {
-  var colunasNaoChave = Planilha.estrutura.colunasNaoChave()
+  var colunasNaoChave = EstruturaVagas.estrutura.colunasNaoChave()
   var colunasNaoChavePlanilha = []
   var colunasChavePlanilha = []
   var parametrosNaoChave = []
@@ -646,7 +647,7 @@ const montarUpdatePlanilha = (colunas) => {
   //A montagem dos parametros foi feita assim, para poder preencher usando a propria
   //linha com argumento da query tal qual ela veio, logo eles têm que seguir a ordem exata dos campos que lá estão
   colunas.filter((coluna, index) => {
-    if (colunasNaoChave.indexOf(Planilha.estrutura.obterColuna(coluna)) > -1){
+    if (colunasNaoChave.indexOf(EstruturaVagas.estrutura.obterColuna(coluna)) > -1){
       colunasNaoChavePlanilha.push(coluna)
       parametrosNaoChave.push('$'+(index+1))
     } else{
@@ -654,10 +655,10 @@ const montarUpdatePlanilha = (colunas) => {
       parametrosChave.push('$'+(index+1))
     }
   })
-  var colunasBancoNaoChave = Planilha.estrutura.colunasBanco(colunasNaoChavePlanilha)
+  var colunasBancoNaoChave = EstruturaVagas.estrutura.colunasBanco(colunasNaoChavePlanilha)
   var sql =  "update vaga set (" + colunasBancoNaoChave.join(',').toLowerCase() + ") = (" + parametrosNaoChave.join(',') + ")"; 
 
-  colunasBanco = Planilha.estrutura.colunasBanco(colunasChavePlanilha)  
+  colunasBanco = EstruturaVagas.estrutura.colunasBanco(colunasChavePlanilha)  
   var where = " where (" + colunasBanco.join(',').toLowerCase() + ") = (" + parametrosChave.join(',') + ")";
 
   return sql+where
@@ -667,7 +668,7 @@ const montarConsultaPelosCamposChave = (cabecalho, linha) => {
   var colunasBancoChave = []
   var parametrosChave = []
   cabecalho.filter((colunaCabecalho, index) => {
-    var coluna = Planilha.estrutura.obterColuna(colunaCabecalho)
+    var coluna = EstruturaVagas.estrutura.obterColuna(colunaCabecalho)
     if (coluna.snChave){
       colunasBancoChave.push(coluna.nomeColunaBanco)
       parametrosChave.push(linha[index])
@@ -678,7 +679,7 @@ const montarConsultaPelosCamposChave = (cabecalho, linha) => {
 }
 
 const montarInsertPlanilha = (colunas) => {
-  var colunasBanco = Planilha.estrutura.colunasBanco(colunas)
+  var colunasBanco = EstruturaVagas.estrutura.colunasBanco(colunas)
   return "insert into vaga (" + colunasBanco.join(',').toLowerCase() + ") values(" + montarValues(colunasBanco.length) + ")"; 
 }
 
@@ -692,7 +693,7 @@ const montarValues = (tamanho, inicio) => {
 }
 
 const validarColunasObrigatorias = (cabecalho) => {
-  Planilha.estrutura.colunasObrigatorias().map((coluna) => {
+  EstruturaVagas.estrutura.colunasObrigatorias().map((coluna) => {
     var achouColuna = false
     coluna.getNomesPossiveis().map(nomePossivel => {
       if (cabecalho.find(elemento => Helper.isIguais(elemento, nomePossivel))){  
@@ -713,8 +714,8 @@ const validarLinhas = async (cabecalho, linhas) => {
     var posicao = -1
     for (let celula of linha){
       posicao = posicao + 1
-      var coluna = Planilha.estrutura.obterColuna(cabecalho[posicao])
-        //Planilha.estrutura.colunas[cabecalho[posicao].toUpperCase()]
+      var coluna = EstruturaVagas.estrutura.obterColuna(cabecalho[posicao])
+        //EstruturaVagas.estrutura.colunas[cabecalho[posicao].toUpperCase()]
       if (coluna){
         if (coluna.validar){
           var msgValidacao = ''
@@ -734,9 +735,92 @@ const validarLinhas = async (cabecalho, linhas) => {
   }
 }
 
-
+const listarColunas =  (req, res) => {
+  var colunas = EstruturaVagas.listarColunas()
+  res.status(200).json( {colunas})    
+}
   
 
+const gerarRelatorio = async (req, res) => {
+  var colunas = req.body.colunas
+  var filtros = req.body.filtros
+
+  var sqlColunas = ''
+  colunas.map(coluna => {
+    if (sqlColunas){
+      sqlColunas += ', '
+    }
+    if (coluna.snSomavel){
+      sqlColunas += ' sum('
+    }
+    sqlColunas += coluna.nomeColunaBanco
+    
+    if (coluna.snSomavel){
+      sqlColunas += ' ) as ' + coluna.nomeColunaBanco
+    }    
+  })
+
+  var sqlAgrupador = ''
+  colunas.map(coluna => {
+    if (!coluna.snSomavel){
+      if (sqlAgrupador){
+        sqlAgrupador += ', '
+      }
+      sqlAgrupador += coluna.nomeColunaBanco
+    }
+  })
+  if (sqlAgrupador){
+    sqlAgrupador = ' group by ' + sqlAgrupador
+  }
+
+  var sqlFiltros = ''
+  filtros.map(filtro => { 
+    if (sqlFiltros){
+        sqlFiltros += ' and  '
+    }
+
+    sqlFiltros += filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
+    if (filtro.operador){
+      var coluna = EstruturaVagas.estrutura.obterColuna(filtro.nomeColunaBanco)
+      if (filtro.operador == 'maior que'){
+        sqlFiltros =  filtro.nomeColunaBanco + ' > \'' + filtro.valor + '\''
+      } else if (filtro.operador == 'menor que'){
+        sqlFiltros =  filtro.nomeColunaBanco + ' < \'' + filtro.valor + '\''
+      } else if (filtro.operador == 'contém'){
+        if (coluna.snSomavel || coluna.snMoeda){
+          sqlFiltros =  filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
+        } else {
+          sqlFiltros =  filtro.nomeColunaBanco + ' ilike \'%' + filtro.valor + '%\''
+        }
+      } else if (filtro.operador == 'não contém'){
+        if (coluna.snSomavel || coluna.snMoeda){
+          sqlFiltros =  filtro.nomeColunaBanco + ' <> \'' + filtro.valor + '\''
+        } else {
+          sqlFiltros =  filtro.nomeColunaBanco + ' not ilike \'%' + filtro.valor + '%\''
+        }
+      }
+    }
+
+  })
+
+  var sql = 'select ' + sqlColunas + ' from vaga where ' + sqlFiltros + sqlAgrupador
+  console.log(sql)
+  try{
+    let vagas = await (await pool.query(sql)).rows
+    res.status(200).json({ vagas, colunas: colunas.map(coluna => ({...coluna, text:coluna.nome, value:coluna.nomeColunaBanco})) })
+  }
+  catch(error){
+    console.log(chalk.red('erro ao buscar vagas', error))
+    res.status(401).json({error: `Error ao consultar dados: ${error}`})
+  }     
+
+}
+
+
+
+
+
+
 module.exports = {
-    importarPlanilha, listar, excluir, alterar, excluirPlanilha, listarPlanilhas
+    importarPlanilha, listar, excluir, alterar, excluirPlanilha, listarPlanilhas, listarColunas, gerarRelatorio
 }

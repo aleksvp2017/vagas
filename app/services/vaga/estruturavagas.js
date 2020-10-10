@@ -1,5 +1,5 @@
 //const Municipio = require('./municipio.js')
-const Helper = require('./helper.js')
+const Helper = require('../helper/helper.js')
 
 const estrutura = {
     nome: 'Vagas',
@@ -225,7 +225,7 @@ const estrutura = {
         },
         getNomesPossiveis(){
           return ['aprovada', 'Vagas propostas (Digitar número de vagas)','QTDADE TOTAL DE VAGAS','NOVO TOTAL DE VAGAS (vagas aprovadas + proposta de aumento)',
-          'Numero de Vagas','VAGAS FINANCIADAS PRONATEC','Vagas (ALUNOS POR TURMA X QTDADE DE TURMAS)']
+          'Numero de Vagas','VAGAS FINANCIADAS PRONATEC','Vagas (ALUNOS POR TURMA X QTDADE DE TURMAS)', 'Total de Vagas\n(Alunos por Turma X Quantidade de Turmas)']
         }        
       },
       APROVADACONTRAPARTIDA: {
@@ -265,13 +265,17 @@ const estrutura = {
         snMoeda: true,
         snChave: true,
         getNomesPossiveis(){
-          return ['VALORHORAAULA','Valor Hora-Aluno (Ex.: 10,00)','VALOR DA HORA-ALUNO\n(Presencial até R$ 10,00 / EAD até R$ 4,50)']
+          return ['VALORHORAAULA','Valor Hora-Aluno (Ex.: 10,00)','VALOR DA HORA-ALUNO\n(Presencial até R$ 10,00 / EAD até R$ 4,50)',
+            'Valor Hora-Aluno\n(Até R$4,50 EAD/R$10,00 Presencial)']
         },
         validar(valor){
           if (isNaN(valor)){
               return 'Coluna ' + this.nome + ' deve ser um número'
           }
-        },        
+        }, 
+        formatar: (valor) => {
+          return valor.toLocaleString('pr-BR', { style: 'currency', currency: 'BRL' })
+        },       
       },    
       VALORAPROVADO: {
         nome: 'VALORAPROVADO',
@@ -287,7 +291,10 @@ const estrutura = {
           if (isNaN(valor)){
               return 'Coluna ' + this.nome + ' deve ser um número'
           }
-        },        
+        }, 
+        formatar: (valor) => {
+          return valor.toLocaleString('pr-BR', { style: 'currency', currency: 'BRL' })
+        },       
       },                 
       HOMOLOGADA: {
         nome: 'HOMOLOGADA',
@@ -448,6 +455,15 @@ const estrutura = {
     },      
   }
 
+  function listarColunas(){
+    var colunas = []
+    Object.entries(estrutura.colunas).map(coluna => {
+      colunas.push(coluna[1])
+    })
+    return colunas
+
+  }
+
   function isTodasColunasVazias(linha){
     var todasColunasVazias = true
     linha.forEach(valor => {
@@ -563,5 +579,5 @@ function somarLinhas(matrizLinhas, cabecalho){
 }
 
   module.exports = {
-      estrutura, isTodasColunasVazias, agruparLinhasIdenticas
+      estrutura, isTodasColunasVazias, agruparLinhasIdenticas, listarColunas
   }
