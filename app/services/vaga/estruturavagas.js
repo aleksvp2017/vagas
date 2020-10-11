@@ -191,6 +191,7 @@ const estrutura = {
         nome: 'DATAAPROVACAO',
         snAtualizavel: true,
         nomeColunaBanco: 'dataaprovacao',
+        colunatempo: true,
         getNomesPossiveis(){
           return ['dataaprovacao']
         },   
@@ -203,6 +204,7 @@ const estrutura = {
         snAtualizavel: true,
         nomeColunaBanco: 'datamatricula',
         snChave: true,
+        colunatempo: true,
         getNomesPossiveis(){
           return ['datamatricula'] 
           //['datamatricula','Data fim da pré-matrícula','data_criacao']
@@ -216,7 +218,8 @@ const estrutura = {
         snAtualizavel: true, 
         snSomavel: true,
         nomeColunaBanco: 'aprovada', 
-        snNumero: true,     
+        snNumero: true,   
+        datavinculada: 'dataaprovacao',  
         validar(valor){
           valor = parseInt(valor)
           if (!Number.isInteger(valor)){
@@ -232,6 +235,7 @@ const estrutura = {
         nome: 'APROVADACONTRAPARTIDA',
         snAtualizavel: true, 
         snSomavel: true,
+        datavinculada: 'dataaprovacao',
         nomeColunaBanco: 'aprovadacontrapartida',      
         validar(valor){
           valor = parseInt(valor)
@@ -242,7 +246,23 @@ const estrutura = {
         getNomesPossiveis(){
           return ['aprovadacontrapartida','CONTRAPARTIDA MÍNIMA']
         }        
-      },      
+      },   
+      APROVADAMAISCONTRAPARTIDA: {
+        nome: 'APROVADAMAISCONTRAPARTIDA',
+        snAtualizavel: false, 
+        snSomavel: true,
+        datavinculada: 'dataaprovacao',
+        nomeColunaBanco: 'aprovadamaisaprovadacontrapartida',      
+        validar(valor){
+          valor = parseInt(valor)
+          if (!Number.isInteger(valor)){
+              return 'Coluna ' + this.nome + ' deve ser um número inteiro'
+          }
+        },
+        getNomesPossiveis(){
+          return ['aprovadamaisaprovadacontrapartida']
+        }        
+      },         
       CARGAHORARIA: {
         nome: 'CARGAHORARIA',
         snAtualizavel: true, 
@@ -284,6 +304,7 @@ const estrutura = {
         snMoeda: true,
         snChave: true,
         snSomavel: true,
+        datavinculada: 'dataaprovacao',
         getNomesPossiveis(){
           return ['VALORAPROVADO','CUSTO TOTAL\n(valor da hora-aluno X carga horária X nº vagas)']
         },
@@ -318,6 +339,7 @@ const estrutura = {
         snAtualizavel: true,   
         snSomavel: true,
         nomeColunaBanco: 'matricula',   
+        datavinculada: 'datamatricula',
         validar(valor){
           valor = parseInt(valor)
           if (valor && !Number.isInteger(valor)){

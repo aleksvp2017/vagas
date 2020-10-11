@@ -753,7 +753,7 @@ const gerarRelatorio = async (req, res) => {
     if (coluna.snSomavel){
       sqlColunas += ' sum('
     }
-    sqlColunas += coluna.nomeColunaBanco
+    sqlColunas += coluna.nomeColunaBanco.replace('mais','+')
     
     if (coluna.snSomavel){
       sqlColunas += ' ) as ' + coluna.nomeColunaBanco
@@ -779,6 +779,7 @@ const gerarRelatorio = async (req, res) => {
         sqlFiltros += ' and  '
     }
 
+    filtro.nomeColunaBanco = filtro.nomeColunaBanco.replace('mais','+')
     sqlFiltros += filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
     if (filtro.operador){
       var coluna = EstruturaVagas.estrutura.obterColuna(filtro.nomeColunaBanco)
@@ -804,7 +805,6 @@ const gerarRelatorio = async (req, res) => {
   })
 
   var sql = 'select ' + sqlColunas + ' from vaga where ' + sqlFiltros + sqlAgrupador
-  console.log(sql)
   try{
     let vagas = await (await pool.query(sql)).rows
     res.status(200).json({ vagas, colunas: colunas.map(coluna => ({...coluna, text:coluna.nome, value:coluna.nomeColunaBanco})) })
