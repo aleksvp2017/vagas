@@ -805,6 +805,7 @@ const gerarRelatorio = async (req, res) => {
   })
 
   var sql = 'select ' + sqlColunas + ' from vaga where ' + sqlFiltros + sqlAgrupador
+  console.log(sql)
   try{
     let vagas = await (await pool.query(sql)).rows
     res.status(200).json({ vagas, colunas: colunas.map(coluna => ({...coluna, text:coluna.nome, value:coluna.nomeColunaBanco})) })
