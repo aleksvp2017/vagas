@@ -252,7 +252,7 @@ const estrutura = {
         snAtualizavel: false, 
         snSomavel: true,
         datavinculada: 'dataaprovacao',
-        nomeColunaBanco: 'aprovadamaisaprovadacontrapartida',      
+        nomeColunaBanco: 'aprovadamaiscontrapartida',      
         validar(valor){
           valor = parseInt(valor)
           if (!Number.isInteger(valor)){
@@ -260,7 +260,7 @@ const estrutura = {
           }
         },
         getNomesPossiveis(){
-          return ['aprovadamaisaprovadacontrapartida']
+          return ['aprovadamaiscontrapartida']
         }        
       },         
       CARGAHORARIA: {

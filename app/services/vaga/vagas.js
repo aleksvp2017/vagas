@@ -753,7 +753,7 @@ const gerarRelatorio = async (req, res) => {
     if (coluna.snSomavel){
       sqlColunas += ' sum('
     }
-    sqlColunas += coluna.nomeColunaBanco.replace('mais','+')
+    sqlColunas += coluna.nomeColunaBanco === 'aprovadamaiscontrapartida'? 'aprovada + aprovadacontrapartida' : coluna.nomeColunaBanco
     
     if (coluna.snSomavel){
       sqlColunas += ' ) as ' + coluna.nomeColunaBanco
@@ -773,13 +773,11 @@ const gerarRelatorio = async (req, res) => {
     sqlAgrupador = ' group by ' + sqlAgrupador
   }
 
-  var sqlFiltros = ''
+  var sqlFiltros = ' where true = true '
   filtros.map(filtro => { 
-    if (sqlFiltros){
-        sqlFiltros += ' and  '
-    }
+    sqlFiltros += ' and  '
 
-    filtro.nomeColunaBanco = filtro.nomeColunaBanco.replace('mais','+')
+    filtro.nomeColunaBanco = filtro.nomeColunaBanco === 'aprovadamaiscontrapartida'? 'aprovada + aprovadacontrapartida' : filtro.nomeColunaBanco
     //sqlFiltros += filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
     if (filtro.operador){
       var coluna = EstruturaVagas.estrutura.obterColuna(filtro.nomeColunaBanco)
@@ -804,7 +802,7 @@ const gerarRelatorio = async (req, res) => {
 
   })
 
-  var sql = 'select ' + sqlColunas + ' from vaga where ' + sqlFiltros + sqlAgrupador
+  var sql = 'select ' + sqlColunas + ' from vaga ' + sqlFiltros + sqlAgrupador
   console.log(sql)
   try{
     let vagas = await (await pool.query(sql)).rows
