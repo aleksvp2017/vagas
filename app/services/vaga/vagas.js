@@ -780,24 +780,24 @@ const gerarRelatorio = async (req, res) => {
     }
 
     filtro.nomeColunaBanco = filtro.nomeColunaBanco.replace('mais','+')
-    sqlFiltros += filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
+    //sqlFiltros += filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
     if (filtro.operador){
       var coluna = EstruturaVagas.estrutura.obterColuna(filtro.nomeColunaBanco)
       if (filtro.operador == 'maior que'){
-        sqlFiltros =  filtro.nomeColunaBanco + ' > \'' + filtro.valor + '\''
+        sqlFiltros +=  filtro.nomeColunaBanco + ' > \'' + filtro.valor + '\''
       } else if (filtro.operador == 'menor que'){
-        sqlFiltros =  filtro.nomeColunaBanco + ' < \'' + filtro.valor + '\''
+        sqlFiltros +=  filtro.nomeColunaBanco + ' < \'' + filtro.valor + '\''
       } else if (filtro.operador == 'contém'){
         if (coluna.snSomavel || coluna.snMoeda){
-          sqlFiltros =  filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
+          sqlFiltros +=  filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
         } else {
-          sqlFiltros =  filtro.nomeColunaBanco + ' ilike \'%' + filtro.valor + '%\''
+          sqlFiltros +=  filtro.nomeColunaBanco + ' ilike \'%' + filtro.valor + '%\''
         }
       } else if (filtro.operador == 'não contém'){
         if (coluna.snSomavel || coluna.snMoeda){
-          sqlFiltros =  filtro.nomeColunaBanco + ' <> \'' + filtro.valor + '\''
+          sqlFiltros +=  filtro.nomeColunaBanco + ' <> \'' + filtro.valor + '\''
         } else {
-          sqlFiltros =  filtro.nomeColunaBanco + ' not ilike \'%' + filtro.valor + '%\''
+          sqlFiltros +=  filtro.nomeColunaBanco + ' not ilike \'%' + filtro.valor + '%\''
         }
       }
     }
