@@ -745,6 +745,40 @@ const gerarRelatorio = async (req, res) => {
   var colunas = req.body.colunas
   var filtros = req.body.filtros
 
+  var sqlColunas = criarClausulaSelecao(colunas)
+  var sqlAgrupador = criarClausulaAgrupamento(colunas)
+  var sqlFiltros = criarClausulaFiltragem(filtros)
+
+  var sql = 'select ' + sqlColunas + ' from vaga ' + sqlFiltros + sqlAgrupador
+  console.log(sql)
+  try{
+    let vagas = await (await pool.query(sql)).rows
+    res.status(200).json({ vagas, colunas: colunas.map(coluna => ({...coluna, text:coluna.nome, value:coluna.nomeColunaBanco})) })
+  }
+  catch(error){
+    console.log(chalk.red('erro ao buscar vagas', error))
+    res.status(401).json({error: `Error ao consultar dados: ${error}`})
+  }     
+
+}
+
+function criarClausulaAgrupamento(colunas){
+  var sqlAgrupador = ''
+  colunas.map(coluna => {
+    if (!coluna.snSomavel){
+      if (sqlAgrupador){
+        sqlAgrupador += ', '
+      }
+      sqlAgrupador += coluna.nomeColunaBanco
+    }
+  })
+  if (sqlAgrupador){
+    sqlAgrupador = ' group by ' + sqlAgrupador
+  }
+  return sqlAgrupador  
+}
+
+function criarClausulaSelecao(colunas){
   var sqlColunas = ''
   colunas.map(coluna => {
     if (sqlColunas){
@@ -759,20 +793,10 @@ const gerarRelatorio = async (req, res) => {
       sqlColunas += ' ) as ' + coluna.nomeColunaBanco
     }    
   })
+  return sqlColunas
+}
 
-  var sqlAgrupador = ''
-  colunas.map(coluna => {
-    if (!coluna.snSomavel){
-      if (sqlAgrupador){
-        sqlAgrupador += ', '
-      }
-      sqlAgrupador += coluna.nomeColunaBanco
-    }
-  })
-  if (sqlAgrupador){
-    sqlAgrupador = ' group by ' + sqlAgrupador
-  }
-
+function criarClausulaFiltragem(filtros){
   var sqlFiltros = ' where true = true '
   filtros.map(filtro => { 
     sqlFiltros += ' and  '
@@ -782,9 +806,19 @@ const gerarRelatorio = async (req, res) => {
     if (filtro.operador){
       var coluna = EstruturaVagas.estrutura.obterColuna(filtro.nomeColunaBanco)
       if (filtro.operador == 'maior que'){
-        sqlFiltros +=  filtro.nomeColunaBanco + ' > \'' + filtro.valor + '\''
+        if (filtro.colunatempo){
+          sqlFiltros +=  'to_date('+filtro.nomeColunaBanco + ',\'DD/MM/YYYY\') > to_date(\'' + filtro.valor + '\',\'DD/MM/YYYY\')'
+        }
+        else{
+          sqlFiltros +=  filtro.nomeColunaBanco + ' > \'' + filtro.valor + '\''
+        }
       } else if (filtro.operador == 'menor que'){
-        sqlFiltros +=  filtro.nomeColunaBanco + ' < \'' + filtro.valor + '\''
+        if (filtro.colunatempo){
+          sqlFiltros +=  'to_date('+filtro.nomeColunaBanco + ',\'DD/MM/YYYY\') < to_date(\'' + filtro.valor + '\',\'DD/MM/YYYY\')'
+        }
+        else{
+          sqlFiltros +=  filtro.nomeColunaBanco + ' < \'' + filtro.valor + '\''
+        }
       } else if (filtro.operador == 'contém'){
         if (coluna.snSomavel || coluna.snMoeda){
           sqlFiltros +=  filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
@@ -800,22 +834,10 @@ const gerarRelatorio = async (req, res) => {
       }
     }
 
-  })
-
-  var sql = 'select ' + sqlColunas + ' from vaga ' + sqlFiltros + sqlAgrupador
-  console.log(sql)
-  try{
-    let vagas = await (await pool.query(sql)).rows
-    res.status(200).json({ vagas, colunas: colunas.map(coluna => ({...coluna, text:coluna.nome, value:coluna.nomeColunaBanco})) })
-  }
-  catch(error){
-    console.log(chalk.red('erro ao buscar vagas', error))
-    res.status(401).json({error: `Error ao consultar dados: ${error}`})
-  }     
-
+  }) 
+  
+  return sqlFiltros
 }
-
-
 
 
 
