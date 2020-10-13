@@ -787,8 +787,16 @@ function criarClausulaSelecao(colunas){
     if (coluna.snSomavel){
       sqlColunas += ' sum('
     }
-    sqlColunas += coluna.nomeColunaBanco === 'aprovadamaiscontrapartida'? 'aprovada + aprovadacontrapartida' : coluna.nomeColunaBanco
     
+    selecaoColuna = coluna.nomeColunaBanco
+    if (coluna.nomeColunaBanco === 'aprovadamaiscontrapartida'){
+      selecaoColuna = ' aprovada + aprovadacontrapartida ' 
+    }
+    else if (coluna.nomeColunaBanco === 'anoaprovacao'){
+      selecaoColuna = ' substring(dataaprovacao,7,4) as anoaprovacao ' 
+    }
+    
+    sqlColunas += selecaoColuna
     if (coluna.snSomavel){
       sqlColunas += ' ) as ' + coluna.nomeColunaBanco
     }    

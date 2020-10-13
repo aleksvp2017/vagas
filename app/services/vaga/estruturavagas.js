@@ -187,6 +187,14 @@ const estrutura = {
           }
         }, */       
       },   
+      ANOAPROVACAO: {
+        nome: 'ANOAPROVACAO',
+        nomeColunaBanco: 'anoaprovacao',
+        colunatempo: true,
+        getNomesPossiveis(){
+          return ['anoaprovacao']
+        },          
+      },      
       DATAAPROVACAO: {
         nome: 'DATAAPROVACAO',
         snAtualizavel: true,
