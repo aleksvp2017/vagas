@@ -156,7 +156,7 @@ const importarPlanilha = async function (req, res) {
     for (const linha of linhas){
       var sql = sqlInsert
       //adicionaPassos(passos,'Verificando existencia da linha')
-      var linhaExistente = await obterLinha(cabecalho, linha)
+      var linhaExistente = false//await obterLinha(cabecalho, linha)
       if (linhaExistente){
         if (!alterarLinhasJaExistentes){
           sql = null
@@ -385,7 +385,7 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
       if (coluna.snMoeda){
         try{
           if (linha[indiceColuna]){
-            linha[indiceColuna] = linha[indiceColuna].replace('R$','').replace('-','').trim()
+            linha[indiceColuna] = linha[indiceColuna].replace('R$','').replace('-','').replace(/,/g, '').trim()
             if (linha[indiceColuna] === ''){
               linha[indiceColuna] = 0
             }

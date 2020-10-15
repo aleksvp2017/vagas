@@ -314,11 +314,11 @@ const estrutura = {
         snSomavel: true,
         datavinculada: 'dataaprovacao',
         getNomesPossiveis(){
-          return ['VALORAPROVADO','CUSTO TOTAL\n(valor da hora-aluno X carga horária X nº vagas)']
+          return ['VALORAPROVADO','CUSTO TOTAL\n(valor da hora-aluno X carga horária X nº vagas)','Valor Total do Curso']
         },
         validar(valor){
           if (isNaN(valor)){
-              return 'Coluna ' + this.nome + ' deve ser um número'
+              return 'Coluna ' + this.nome + ' deve ser um número. Valor testado: ' + valor
           }
         }, 
         formatar: (valor) => {
