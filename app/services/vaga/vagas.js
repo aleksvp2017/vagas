@@ -483,6 +483,8 @@ const listarInstituicoes = async (req, res) => {
 }
 
 async function infereRedePelaInstituicao(linhas, cabecalho){
+  const esferaNaoFederalPadrao = 'ESTADOS, DF, MUNICÍPIOS'
+  const esferaFederal = 'FEDERAL'
   var instituicoesNaoEncontradas = ''
   //Se não veio a rede
   if (!temColuna(EstruturaVagas.estrutura.colunas.REDE, cabecalho)){
@@ -493,7 +495,12 @@ async function infereRedePelaInstituicao(linhas, cabecalho){
       var achouInstituicao = false
       instituicoes.map(instituicaoCadastrada => {
         if (Helper.isIguais(instituicaoCadastrada.sigla, instituicao)){
-          linha.push(instituicaoCadastrada.esfera)
+          if (instituicaoCadastrada.esfera == esferaFederal){
+            linha.push(instituicaoCadastrada.esfera)
+          }
+          else{
+            linha.push(esferaNaoFederalPadrao)
+          }
           achouInstituicao = true
         }
       })
@@ -503,7 +510,7 @@ async function infereRedePelaInstituicao(linhas, cabecalho){
           instituicoesNaoEncontradas += instituicao
           Mensagem.enviarEmail('e-Vagas: Instituição de ensino não cadastrada', 'Instituição não cadastrada: ' + instituicao, 'aleksvp@gmail.com')
         }
-        linha.push('Estadual')
+        linha.push(esferaNaoFederalPadrao)
       }
     })
     cabecalho.push(EstruturaVagas.estrutura.colunas.REDE.nomeColunaBanco)

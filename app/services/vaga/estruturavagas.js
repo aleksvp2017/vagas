@@ -127,7 +127,7 @@ const estrutura = {
           var valoresPossiveisFIC = ['fic', 'FORMAÇÃO INICIAL', 'FORMAÇÃO CONTINUADA']
           const FIC = 'FIC'
           var valoresPossiveisTecnico = ['tecnico']
-          const TECNICO = 'TECNICO'
+          const TECNICO = 'TÉCNICO'
 
           for (valorPossivel of valoresPossiveisFIC) {
             if (Helper.contem(valor, valorPossivel)){
