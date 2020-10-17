@@ -14,6 +14,12 @@ insert into recurso (nome, path, snmenu) values ('Painel','/painel', true)
 insert into operacao (recursoid, nome, uri) values (7, 'consultar', '/painel')
 insert into permissao (usuarioid, operacaoid) values (4, 17)
 
+select * from usuario
+insert into permissao (usuarioid, operacaoid) values (15, 17);
+insert into permissao (usuarioid, operacaoid) values (15, 18);
+insert into permissao (usuarioid, operacaoid) values (15, 19);
+
+
 --PARA RECURSOS NOVOS DE MENU, LEMBRAR DE CONFIGURAR NO ROUTE.JS DA UI
 
 select distinct r.* from recurso r

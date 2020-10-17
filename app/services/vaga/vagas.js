@@ -115,6 +115,13 @@ const listarPlanilhas = async (req, res) => {
   }              
 }
 
+const verificarPlanilhaJaCarregada = async (nomePlanilha) => {
+  var sql = 'select distinct nomeplanilha from vaga where nomeplanilha ilike \'%' + nomePlanilha + '\%\''
+  let planilhas = await (await pool.query(sql)).rows
+  if (planilhas != null && planilhas.length > 0) {
+    throw 'Planilha já carregada. Por gentileza, exclua a cadastrada ou renomeie a que está tentando carregar.'
+  }
+}
 
 const importarPlanilha = async function (req, res) {
   var alterarLinhasJaExistentes = JSON.parse(req.body.snAlterarRegistrosExistentes)
@@ -284,6 +291,9 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
     }
   }
   resumoImportacao.push({nome:'Nome da aba carregada', detalhe: nomeAba})
+
+  adicionaPassos(passos,'Verificando se planilha já existe')
+  await verificarPlanilhaJaCarregada(req.files[0].originalname)
 
   //carrega as linhas
   adicionaPassos(passos,'Carregando matriz de dados')
@@ -477,7 +487,7 @@ async function infereRedePelaInstituicao(linhas, cabecalho){
   //Se não veio a rede
   if (!temColuna(EstruturaVagas.estrutura.colunas.REDE, cabecalho)){
     var instituicoes = await listarInstituicoes()
-    linhas.map(linha => {
+    linhas.map((linha, index) => {
       var posicao = Helper.obterPosicao(cabecalho, EstruturaVagas.estrutura.colunas.INSTITUICAO)
       var instituicao = linha[posicao]
       var achouInstituicao = false
