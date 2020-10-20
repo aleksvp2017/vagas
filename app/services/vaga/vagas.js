@@ -755,8 +755,9 @@ const validarLinhas = async (cabecalho, linhas) => {
     var posicao = -1
     for (let celula of linha){
       posicao = posicao + 1
+      console.log('Obter coluna: ' + cabecalho[posicao] + ' posicao ' + posicao + ' cabecalho ', cabecalho)
       var coluna = EstruturaVagas.estrutura.obterColuna(cabecalho[posicao])
-      console.log('Validando coluna' + coluna + ' com valor ' + celula)
+      console.log('obteve')
         //EstruturaVagas.estrutura.colunas[cabecalho[posicao].toUpperCase()]
       if (coluna){
         if (coluna.validar){
