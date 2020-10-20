@@ -755,22 +755,23 @@ const validarLinhas = async (cabecalho, linhas) => {
     var posicao = -1
     for (let celula of linha){
       posicao = posicao + 1
-      console.log('Obter coluna: ' + cabecalho[posicao] + ' posicao ' + posicao + ' cabecalho ', cabecalho)
-      var coluna = EstruturaVagas.estrutura.obterColuna(cabecalho[posicao])
-      console.log('obteve')
-        //EstruturaVagas.estrutura.colunas[cabecalho[posicao].toUpperCase()]
-      if (coluna){
-        if (coluna.validar){
-          var msgValidacao = ''
-          if (coluna.colunaDependente){
-            msgValidacao = await coluna.validar(celula, 
-              linha[Helper.obterPosicao(cabecalho, coluna.colunaDependente())])
-              //linha[cabecalho.indexOf(coluna.colunaDependente)])
-          } else {
-            msgValidacao = coluna.validar(celula)
-          }
-          if (msgValidacao){
-            throw msgValidacao
+      //console.log('Obter coluna: ' + cabecalho[posicao] + ' posicao ' + posicao + ' cabecalho ', cabecalho)
+      if (posicao < cabecalho.length){
+        var coluna = EstruturaVagas.estrutura.obterColuna(cabecalho[posicao])
+          //EstruturaVagas.estrutura.colunas[cabecalho[posicao].toUpperCase()]
+        if (coluna){
+          if (coluna.validar){
+            var msgValidacao = ''
+            if (coluna.colunaDependente){
+              msgValidacao = await coluna.validar(celula, 
+                linha[Helper.obterPosicao(cabecalho, coluna.colunaDependente())])
+                //linha[cabecalho.indexOf(coluna.colunaDependente)])
+            } else {
+              msgValidacao = coluna.validar(celula)
+            }
+            if (msgValidacao){
+              throw msgValidacao
+            }
           }
         }
       }
