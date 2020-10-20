@@ -432,6 +432,7 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
           }
           else {
             if (linha[indiceColuna]){
+              console.log('Aqui:', linha[indiceColuna])
               linha[indiceColuna] = linha[indiceColuna].replace('\'','')
             }
           }
