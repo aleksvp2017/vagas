@@ -36,7 +36,7 @@ var routes = [
     //MENSAGEM
     { uri: '/mensagem', metodohttp: 'post', componente: Mensagem, metodo: 'enviar', requerAutenticacao: true},
     //PAINEL
-    { uri: '/painel', metodohttp: 'get', componente: Painel, metodo: 'consultar', requerAutenticacao: true},    
+    { uri: '/painel/incluir', metodohttp: 'post', componente: Painel, metodo: 'incluirConsulta', requerAutenticacao: true},    
     //PERIODO DE PACTUACAO
     { uri: '/periodopactuacaoaberto', metodohttp: 'get', componente: Periodo, metodo: 'obter', requerAutenticacao: false},
 ];

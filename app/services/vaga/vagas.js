@@ -491,6 +491,9 @@ async function infereRedePelaInstituicao(linhas, cabecalho){
     var instituicoes = await listarInstituicoes()
     linhas.map((linha, index) => {
       var posicao = Helper.obterPosicao(cabecalho, EstruturaVagas.estrutura.colunas.INSTITUICAO)
+      if (posicao === -1){
+        throw ' Coluna com instituição de ensino não encontrada'
+      }
       var instituicao = linha[posicao]
       var achouInstituicao = false
       instituicoes.map(instituicaoCadastrada => {
