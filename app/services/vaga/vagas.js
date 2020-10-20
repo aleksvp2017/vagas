@@ -193,7 +193,7 @@ const importarPlanilha = async function (req, res) {
         linhasInseridas++
       }
       if (sql){       
-        //adicionaPassos(passos,'Executando sql:', sql) 
+        console.log('Executando sql:', sql, ' linha: ', linha) 
         await client.query(sql, linha)
         //passos = passos.slice(0, passos.length-1)
       }
