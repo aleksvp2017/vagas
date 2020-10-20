@@ -361,8 +361,10 @@ async function processarLinhas(matrizDados, passos, resumoImportacao, req, linha
 
   //valida linhas de acordo com o previsto na estrutura da planilha
   //tem o await devido à possibilidade de validação que envolva BD
+  adicionaPassos(passos,'Validando linhas')
   await validarLinhas(cabecalho, linhas)
   
+  adicionaPassos(passos,'Alicar UpperCase Nas Colunas Nao Numéricas')
   linhas = aplicarUpperCaseNasColunasNaoNumericas(linhas)
 
 return {linhas, cabecalho}
@@ -401,11 +403,11 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
     var indiceColuna = 0
     for (nomeColuna of cabecalho){
         var coluna = EstruturaVagas.estrutura.obterColuna(nomeColuna)
-        console.log(linha)
+        /*console.log(linha)
         console.log(indiceLinha)
         console.log(indiceColuna)
         console.log(coluna)   
-        console.log(nomeColuna)        
+        console.log(nomeColuna)     */   
         try{
           if (coluna.snMoeda){
             try{
@@ -432,7 +434,7 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
           }
           else {
             if (linha[indiceColuna]){
-              console.log('Aqui:', linha[indiceColuna])
+              //console.log('Aqui:', linha[indiceColuna])
               linha[indiceColuna] = linha[indiceColuna].replace('\'','')
             }
           }
@@ -754,6 +756,7 @@ const validarLinhas = async (cabecalho, linhas) => {
     for (let celula of linha){
       posicao = posicao + 1
       var coluna = EstruturaVagas.estrutura.obterColuna(cabecalho[posicao])
+      console.log('Validando coluna' + coluna + ' com valor ' + celula)
         //EstruturaVagas.estrutura.colunas[cabecalho[posicao].toUpperCase()]
       if (coluna){
         if (coluna.validar){
