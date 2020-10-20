@@ -391,40 +391,44 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
   for (linha of linhas){
     var indiceColuna = 0
     for (nomeColuna of cabecalho){
-      var coluna = EstruturaVagas.estrutura.obterColuna(nomeColuna)
-      if (coluna.snMoeda){
+        var coluna = EstruturaVagas.estrutura.obterColuna(nomeColuna)
         try{
-          if (linha[indiceColuna]){
-            linha[indiceColuna] = linha[indiceColuna].replace('R$','').replace('-','').replace(/,/g, '').trim()
-            if (linha[indiceColuna] === ''){
-              linha[indiceColuna] = 0
+          if (coluna.snMoeda){
+            try{
+              if (linha[indiceColuna]){
+                linha[indiceColuna] = linha[indiceColuna].replace('R$','').replace('-','').replace(/,/g, '').trim()
+                if (linha[indiceColuna] === ''){
+                  linha[indiceColuna] = 0
+                }
+              }
+            }
+            catch (error){
+              throw error + ' (linha ' + indiceLinha + ')'
             }
           }
-        }
-        catch (error){
-          throw error + ' (linha ' + indiceLinha + ')'
-        }
-      }
-      else if (coluna.snNumero){
-        try{
-          if (linha[indiceColuna]){
-            linha[indiceColuna] = linha[indiceColuna].replace(',','')
+          else if (coluna.snNumero){
+            try{
+              if (linha[indiceColuna]){
+                linha[indiceColuna] = linha[indiceColuna].replace(',','')
+              }
+            }
+            catch (error){
+              throw error + ' (linha ' + indiceLinha + ')'
+            }
           }
+          else {
+            if (linha[indiceColuna]){
+              linha[indiceColuna] = linha[indiceColuna].replace('\'','')
+            }
+          }
+          indiceColuna++
         }
         catch (error){
-          throw error + ' (linha ' + indiceLinha + ')'
+          throw error + ' (linha ' + indiceLinha + ' coluna ' + indiceColuna + ' dados: ' + linha + ')'
         }
       }
-      else {
-        if (linha[indiceColuna]){
-          linha[indiceColuna] = linha[indiceColuna].replace('\'','')
-        }
-      }
-
-      indiceColuna++
+      indiceLinha++
     }
-    indiceLinha++
-  } 
 }
 
 function substituiConteudoPorValoresPadronizado(linhas, cabecalho){
