@@ -132,15 +132,19 @@ const importarPlanilha = async function (req, res) {
     var inicioDaImportacao = Date.now()
 
     adicionaPassos(passos,'Carregando planilha')
-    let {linhas, cabecalho} = await carregarLinhasPlanilha(req, passos, resumoImportacao)   
+    var {matrizDados, linhasPreenchidas} = await carregarLinhasPlanilha(req, passos, resumoImportacao)   
     adicionaPassos(passos,'Planilha carregada')
 
     //Esse limite é por duas coisas: usuário não ficar plantado esperando; 
     //depois de um tempo, vue-resource refaz a requisição se não tiver tido resposta
-    if (linhas.length > 500){
+    if (linhasPreenchidas.length > 500){
       jaRespondido = true
       res.status(200).json({ message: "Não precisa esperar, você receberá um e-mail ao final do processamento da planilha." })
     }
+
+    adicionaPassos(passos,'Processnado linhas')
+    let {linhas, cabecalho} = await processarLinhas(matrizDados, passos, resumoImportacao, req, linhasPreenchidas)
+    adicionaPassos(passos,'Linhas processadas')
     
     //verificarLinhasIdenticasNaPlanilha(linhas, cabecalho)
 
@@ -304,11 +308,16 @@ async function carregarLinhasPlanilha(req, passos, resumoImportacao) {
   resumoImportacao.push({nome:'Número de linhas na planilha (inclui linhas em branco)',detalhe: matrizDados.length})
 
   //extrai as linhas da matriz - tira so o cabecalho
-  var linhas = matrizDados.splice(1,matrizDados.length)
+  var linhasPreenchidas = matrizDados.splice(1,matrizDados.length)
 
   adicionaPassos(passos,'Removendo linhas vazias')
-  linhas = removeLinhasComTodasColunasVazias(linhas)
-  resumoImportacao.push({nome:'Número de linhas com dados preenchidas na planilha ',detalhe: linhas.length})
+  linhasPreenchidas = removeLinhasComTodasColunasVazias(linhasPreenchidas)
+  resumoImportacao.push({nome:'Número de linhas com dados preenchidas na planilha ',detalhe: linhasPreenchidas.length})
+  
+  return {matrizDados, linhasPreenchidas}
+}
+
+async function processarLinhas(matrizDados, passos, resumoImportacao, req, linhas) {  
   
   //remove colunas nao previstas na estrutura da planilha 
   //retorna, alem do cabecalho ja sem as colunas, o indice das colunas que deverão
