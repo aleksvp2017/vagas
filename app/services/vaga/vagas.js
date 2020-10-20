@@ -391,6 +391,9 @@ function substituiCamposComValorMonetariosPorNumerico(linhas, cabecalho){
   for (linha of linhas){
     var indiceColuna = 0
     for (nomeColuna of cabecalho){
+        console.log(linha)
+        console.log(indiceLinha)
+        console.log(indiceColuna)
         var coluna = EstruturaVagas.estrutura.obterColuna(nomeColuna)
         try{
           if (coluna.snMoeda){
