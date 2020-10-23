@@ -49,7 +49,8 @@ const obterMenu = async(usuario) => {
                 " inner join operacao op on op.recursoid = r.recursoid " +
                 " inner join permissao p on op.operacaoid = p.operacaoid " +
                 " inner join usuario u on u.usuarioid = p.usuarioid " +
-                " where r.snmenu and u.email = $1 "
+                " where r.snmenu and u.email = $1  " +
+                " order by r.ordem "
     var itensMenu = await (await pool.query(sql, [usuario])).rows
     return itensMenu
 }
