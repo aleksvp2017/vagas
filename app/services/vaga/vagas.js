@@ -786,22 +786,23 @@ const listarColunas =  (req, res) => {
   
 
 const gerarRelatorio = async (req, res) => {
-  var colunas = req.body.colunas
-  var filtros = req.body.filtros
-
-  var sqlColunas = criarClausulaSelecao(colunas)
-  var sqlAgrupador = criarClausulaAgrupamento(colunas)
-  var sqlFiltros = criarClausulaFiltragem(filtros)
-
-  var sql = 'select ' + sqlColunas + ' from vaga ' + sqlFiltros + sqlAgrupador
-  console.log(sql)
   try{
+    var colunas = req.body.colunas
+    var filtros = req.body.filtros
+  
+    var sqlColunas = criarClausulaSelecao(colunas)
+    var sqlAgrupador = criarClausulaAgrupamento(colunas)
+    var sqlFiltros = criarClausulaFiltragem(filtros)
+  
+    var sql = 'select ' + sqlColunas + ' from vaga ' + sqlFiltros + sqlAgrupador
+    console.log(sql)
+
     let vagas = await (await pool.query(sql)).rows
     res.status(200).json({ vagas, colunas: colunas.map(coluna => ({...coluna, text:coluna.nome, value:coluna.nomeColunaBanco})) })
   }
   catch(error){
     console.log(chalk.red('erro ao buscar vagas', error))
-    res.status(401).json({error: `Error ao consultar dados: ${error}`})
+    res.status(401).json({error: `${error}`})
   }     
 
 }
@@ -853,6 +854,8 @@ function criarClausulaFiltragem(filtros){
   filtros.map(filtro => { 
     sqlFiltros += ' and  '
 
+    validaFiltroEValor(filtro)
+
     filtro.nomeColunaBanco = filtro.nomeColunaBanco === 'aprovadamaiscontrapartida'? 'aprovada + aprovadacontrapartida' : filtro.nomeColunaBanco
     //sqlFiltros += filtro.nomeColunaBanco + ' = \'' + filtro.valor + '\''
     if (filtro.operador){
@@ -891,6 +894,27 @@ function criarClausulaFiltragem(filtros){
   return sqlFiltros
 }
 
+function validaFiltroEValor(filtro){
+  var coluna = EstruturaVagas.estrutura.obterColuna(filtro.nomeColunaBanco)
+  if (filtro.colunatempo){
+    if (!verificarData(filtro.valor)){
+      throw ` ${filtro.valor} não é um valor válido para o campo ${filtro.nome}. Ele deve ser preenchido no formato DD/MM/YYYY `
+    }
+  }
+  if (coluna.snSomavel || coluna.snMoeda){
+    if (isNaN(filtro.valor)){
+      throw ` ${filtro.valor} não é um valor válido para o campo ${filtro.nome}. Ele deve ser preenchido com um valor numérico.`
+    }
+  }
+}
+
+function verificarData(dataASerVerificada){
+  var patternData = /^[0-9]{2}\/[0-9]{2}\/[0-9]{4}$/
+  if(!patternData.test(dataASerVerificada)){
+    return false;
+  }
+  return true
+}
 
 
 
