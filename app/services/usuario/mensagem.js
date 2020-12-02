@@ -7,7 +7,7 @@ const enviarWhatsApp = (mensagem, destinatario) => {
     from: 'whatsapp:+14155238886',
     body: mensagem,
     to: 'whatsapp:'+destinatario
-    }).then(message => console.log(message.sid)).catch(error => console.log(error))
+    }).then(message => console.log('Mensagem enviada: ', message.sid)).catch(error => console.log(error))
 }
 
 

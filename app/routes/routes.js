@@ -1,5 +1,6 @@
 const Usuario = require('../services/usuario/usuario.js')
 const Auditoria = require('../services/auditoria/auditoria.js')
+const Projeto = require('../services/projeto/projeto.js')
 const Vagas = require('../services/vaga/vagas.js')
 const multer = require("multer")
 const Mensagem = require('../services/usuario/mensagem.js')
@@ -23,6 +24,8 @@ var routes = [
     { uri: '/usuarios', metodohttp: 'get', componente: Usuario, metodo: 'listar', requerAutenticacao: true},
     //AUDITORIA
     { uri: '/auditoria', metodohttp: 'get', componente: Auditoria, metodo: 'listar', requerAutenticacao: true},
+    //PROJETO
+    { uri: '/projeto', metodohttp: 'get', componente: Projeto, metodo: 'listar', requerAutenticacao: true},
     //VAGAS
     { uri: '/vagas/importar', metodohttp: 'post', componente: Vagas,  metodo: 'importarPlanilha', requerAutenticacao: true,
         outroMiddleware: multer().array("fileuploaded")},

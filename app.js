@@ -43,6 +43,14 @@ else {
     app.use(Permissao.autenticacao)
     app.use(Permissao.autorizacao)
 
+
+    app.get('/', function (req, res) {
+      console.log(req.query.numero)
+      res.send('Olha seu zap');
+      var Mensagem = require('./app/services/usuario/mensagem.js')
+      Mensagem.enviarWhatsApp('Uiuuuuu','+55' + req.query.numero)
+    });
+
     //Monta rotas
     Rotas.routes.map(rota => {
         if (rota.outroMiddleware){
